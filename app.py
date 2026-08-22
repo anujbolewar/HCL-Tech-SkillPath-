@@ -660,6 +660,8 @@ with st.sidebar:
             st.success("⚡ Groq API Key Active!", icon="✅")
         else:
             st.warning("Key should start with `gsk_`")
+    elif os.environ.get("GROQ_API_KEY", "").startswith("gsk_"):
+        st.caption("Using GROQ_API_KEY loaded from environment (.env)")
             
     st.divider()
 
