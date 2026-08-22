@@ -639,7 +639,7 @@ with st.sidebar:
     groq_key_input = st.text_input(
         "Enter Groq API Key (`gsk_...`)",
         type="password",
-        placeholder="gsk_qqjhPzoU9CGh...",
+        placeholder="gsk_...",
         help="Paste your Groq Cloud API Key starting with gsk_"
     )
     
