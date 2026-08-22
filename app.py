@@ -5,6 +5,7 @@ import json
 import time
 import os
 import re
+from collections import Counter
 
 from dotenv import load_dotenv
 
@@ -632,11 +633,107 @@ def generate_fallback_roadmap(goal: str, profile: dict):
             }
         ]
 
+    # Scale module durations to the learner's weekly commitment
+    # (templates assume a 10 h/week baseline; clamp to half/double)
+    try:
+        hours = int(profile.get("weekly_hours") or 10)
+    except (TypeError, ValueError):
+        hours = 10
+    factor = max(0.5, min(2.0, 10 / max(1, hours)))
+    if abs(factor - 1.0) > 1e-9:
+        scaled_phases = []
+        for phase in phases:
+            scaled_nodes = []
+            for node in phase["nodes"]:
+                node = dict(node)
+                m = re.match(r"^(\d+)\s*weeks?", str(node.get("duration", "")))
+                if m:
+                    weeks = max(1, round(int(m.group(1)) * factor))
+                    node["duration"] = f"{weeks} week" + ("s" if weeks != 1 else "")
+                scaled_nodes.append(node)
+            scaled_phases.append({"phase": phase["phase"], "nodes": scaled_nodes})
+        phases = scaled_phases
+
     return {
         "goal": goal,
         "role": role,
         "phases": phases
     }
+
+# ==========================================
+# XAI: TRANSPARENT NODE RELEVANCE SCORING
+# ==========================================
+def compute_node_relevance(node: dict, profile: dict, completed_nodes: set, phase_idx: int, total_phases: int):
+    """Deterministic, explainable relevance score (0-100) for a roadmap node.
+
+    Factors:
+      - Skill-gap coverage (/40): rewards teaching skills the learner does NOT have
+      - Prerequisite readiness (/30): how many prereqs are already completed
+      - Experience-phase fit (/30): early phases suit beginners, late phases suit advanced
+    Returns (score:int, breakdown:list[str]).
+    """
+    skills = node.get("skills") or []
+    prereqs = node.get("prereqs") or []
+    breakdown = []
+
+    # Factor 1 - Skill-gap coverage (max 40)
+    known_skills = profile.get("skills") or []
+    gap = sum(1 for s in skills if s not in known_skills)
+    if skills:
+        f_gap = round((gap / len(skills)) * 40, 1)
+        breakdown.append(f"Skill-gap coverage: +{f_gap:.0f}/40 ({gap} of {len(skills)} skills new to you)")
+    else:
+        f_gap = 20.0
+        breakdown.append(f"Skill-gap coverage: +{f_gap:.0f}/40 (no skill tags on this module)")
+
+    # Factor 2 - Prerequisite readiness (max 30)
+    if prereqs:
+        met = sum(1 for p in prereqs if p in completed_nodes)
+        f_prereq = round((met / len(prereqs)) * 30, 1)
+        breakdown.append(f"Prerequisite readiness: +{f_prereq:.0f}/30 ({met}/{len(prereqs)} completed)")
+    else:
+        f_prereq = 30.0
+        breakdown.append("Prerequisite readiness: +30/30 (entry point — no prerequisites)")
+
+    # Factor 3 - Experience-phase fit (max 30)
+    depth = (phase_idx + 1) / max(total_phases, 1)
+    level = profile.get("experience_level") or "Beginner"
+    fit_target = {"Beginner": 0.25, "Intermediate": 0.5, "Advanced": 0.85}.get(level, 0.5)
+    closeness = max(0.0, 1.0 - abs(depth - fit_target))
+    f_fit = round(closeness * 30, 1)
+    phase_no = phase_idx + 1
+    breakdown.append(f"Experience-phase fit: +{f_fit:.0f}/30 ({level} level vs Phase {phase_no} of {total_phases})")
+
+    score = min(100, round(f_gap + f_prereq + f_fit))
+    return score, breakdown
+
+def build_markdown_export(roadmap: dict, completed_nodes: set, progress_pct: int) -> str:
+    """Full human-readable roadmap: summary, per-phase module table, checklist."""
+    all_nodes = [n for p in roadmap["phases"] for n in p["nodes"]]
+    done = len(completed_nodes)
+    lines = [
+        f"# Learning Path: {roadmap['role']}",
+        f"**Goal:** {roadmap['goal']}  ",
+        f"**Progress:** {progress_pct}% ({done}/{len(all_nodes)} milestones)",
+        "",
+    ]
+    for phase in roadmap["phases"]:
+        lines += [f"## {phase['phase']}", "",
+                  "| ID | Module | Type | Provider | Duration | Status |",
+                  "|----|--------|------|----------|----------|--------|"]
+        for n in phase["nodes"]:
+            status = "✅ Done" if n["id"] in completed_nodes else "⬜ Pending"
+            title = str(n.get("title", "")).replace("|", "\\|")
+            provider = str(n.get("provider", "")).replace("|", "\\|")
+            lines.append(f"| {n['id']} | {title} | {n.get('type', '')} | {provider} | "
+                         f"{n.get('duration', '')} | {status} |")
+        lines.append("")
+    lines += ["## Checklist", ""]
+    for phase in roadmap["phases"]:
+        for n in phase["nodes"]:
+            mark = "x" if n["id"] in completed_nodes else " "
+            lines.append(f"- [{mark}] **{n['id']}** — {n.get('title', '')}")
+    return "\n".join(lines) + "\n"
 
 # ==========================================
 # SIDEBAR: PILLAR 2 & GROQ CONFIGURATION
@@ -1019,13 +1116,19 @@ with tab_xai:
     
     with col_xai_left:
         st.markdown("### 🔍 Rationale Transparency Ledger")
-        for phase in roadmap["phases"]:
+        total_phases = len(roadmap["phases"])
+        for phase_idx, phase in enumerate(roadmap["phases"]):
             for node in phase["nodes"]:
-                with st.expander(f"Why {node['id']}: {node['title']}?", expanded=False):
-                    st.markdown(f"**Target Skill Gap:** Replaces deficiency in *{', '.join(node['skills'])}*")
-                    st.markdown(f"**Prerequisite Rationale:** {node['why']}")
+                score, breakdown = compute_node_relevance(
+                    node, st.session_state.user_profile,
+                    st.session_state.completed_nodes, phase_idx, total_phases)
+                with st.expander(f"Why {node['id']}: {node['title']}? ({score}% relevant)", expanded=False):
+                    st.markdown(f"**Target Skill Gap:** Replaces deficiency in *{', '.join(node.get('skills') or ['—'])}*")
+                    st.markdown(f"**Prerequisite Rationale:** {node.get('why', 'Core milestone on your learning path.')}")
                     st.markdown(f"**Goal Alignment:** Supports your learning focus as **{roadmap['role']}**")
-                    st.progress(0.95, text="Relevance Confidence Score: 95%")
+                    st.progress(score / 100, text=f"Relevance Score: {score}/100")
+                    for line in breakdown:
+                        st.caption(f"• {line}")
     
     with col_xai_right:
         st.markdown("### 🤖 AI Mentor — knows your roadmap")
@@ -1130,23 +1233,36 @@ with tab_dash:
     
     with col_radar:
         st.markdown("### 🕸️ Skill Competency Radar Chart")
-        
-        skill_categories = ["Math & Stats", "Programming", "ML Modeling", "Deep Learning", "MLOps & Deploy"]
-        base_vals = [40, 60, 30, 20, 25] if st.session_state.user_profile['experience_level'] == 'Intermediate' else [20, 40, 10, 5, 10]
-        completed_boost = len(st.session_state.completed_nodes) * 12
-        current_vals = [min(100, val + completed_boost) for val in base_vals]
+
+        # Derive axes from THIS roadmap's skills so a guitar path shows
+        # Chords/Repertoire instead of ML jargon
+        node_skills = [
+            s for phase in roadmap["phases"]
+            for n in phase["nodes"] for s in (n.get("skills") or [])
+        ]
+        top_skills = [s for s, _ in Counter(node_skills).most_common(6)] or ["Fundamentals"]
+        known = set(st.session_state.user_profile.get("skills") or [])
+        base_vals = [45 if s in known else 15 for s in top_skills]
+
+        current_vals = []
+        for skill, base in zip(top_skills, base_vals):
+            trained = any(
+                skill in (n.get("skills") or []) and n["id"] in st.session_state.completed_nodes
+                for p in roadmap["phases"] for n in p["nodes"]
+            )
+            current_vals.append(min(100, base + (18 if trained else 0)))
         
         fig = go.Figure()
         fig.add_trace(go.Scatterpolar(
             r=base_vals,
-            theta=skill_categories,
+            theta=top_skills,
             fill='toself',
             name='Baseline Profile',
             line_color='#4facfe'
         ))
         fig.add_trace(go.Scatterpolar(
             r=current_vals,
-            theta=skill_categories,
+            theta=top_skills,
             fill='toself',
             name='Current Competency',
             line_color='#10b981'
@@ -1200,8 +1316,8 @@ with tab_dash:
             )
         with c_exp2:
             st.download_button(
-                "📄 Export Markdown Summary",
-                data=f"# Learning Path: {roadmap['role']}\nGoal: {roadmap['goal']}\nProgress: {progress_pct}%",
+                "📄 Export Markdown Roadmap",
+                data=build_markdown_export(roadmap, st.session_state.completed_nodes, progress_pct),
                 file_name="learning_path.md",
                 mime="text/markdown",
                 width="stretch"
