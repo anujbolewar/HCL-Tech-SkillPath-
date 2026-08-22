@@ -6,6 +6,10 @@ import time
 import os
 import re
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Import Groq SDK
 try:
     from groq import Groq
@@ -22,6 +26,13 @@ try:
     HAS_STREAMLIT_FLOW = True
 except ImportError:
     HAS_STREAMLIT_FLOW = False
+
+# Fallback list used when the live model catalog cannot be fetched
+DEFAULT_GROQ_MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile",
+]
 
 # ==========================================
 # PAGE CONFIGURATION & STYLES
@@ -639,15 +650,30 @@ with st.sidebar:
     groq_key_input = st.text_input(
         "Enter Groq API Key (`gsk_...`)",
         type="password",
-        placeholder="gsk_qqjhPzoU9CGh...",
+        placeholder="gsk_...",
         help="Paste your Groq Cloud API Key starting with gsk_"
     )
     
+    # Fetch the live model catalog for this key (cached per session)
+    _key_for_models = groq_key_input or os.environ.get("GROQ_API_KEY", "")
+    available_models = list(DEFAULT_GROQ_MODELS)
+    if _key_for_models and HAS_GROQ:
+        _cache_key = f"_groq_models_{_key_for_models[:10]}"
+        if _cache_key not in st.session_state:
+            try:
+                _models_client = Groq(api_key=_key_for_models)
+                st.session_state[_cache_key] = sorted(
+                    m.id for m in _models_client.models.list().data
+                )
+            except Exception:
+                st.session_state[_cache_key] = list(DEFAULT_GROQ_MODELS)
+        available_models = st.session_state[_cache_key]
+
     groq_model_choice = st.selectbox(
         "Select Groq LLM Model",
-        ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
+        available_models,
         index=0,
-        help="Only models available on your Groq account are listed"
+        help="Models fetched live from your Groq account; falls back to defaults if unreachable"
     )
     
     if groq_key_input:
@@ -656,6 +682,8 @@ with st.sidebar:
             st.success("⚡ Groq API Key Active!", icon="✅")
         else:
             st.warning("Key should start with `gsk_`")
+    elif os.environ.get("GROQ_API_KEY", "").startswith("gsk_"):
+        st.caption("Using GROQ_API_KEY loaded from environment (.env)")
             
     st.divider()
 
@@ -1015,6 +1043,7 @@ with tab_xai:
             active_key = groq_key_input or os.environ.get("GROQ_API_KEY", "")
 
             if active_key and HAS_GROQ:
+                client = Groq(api_key=active_key)
                 try:
                     # Build full roadmap context so the mentor answers from REAL data
                     done = st.session_state.completed_nodes
@@ -1043,7 +1072,8 @@ RULES:
 4. Keep replies under 150 words, friendly and actionable.
 5. Off-topic questions: answer briefly, then steer back to their learning goal."""
                     messages = [{"role": "system", "content": system_prompt}]
-                    messages.extend(st.session_state.chat_history)
+                    # Cap context window: last 20 turns keeps tokens bounded
+                    messages.extend(st.session_state.chat_history[-20:])
 
                     response = client.chat.completions.create(
                         messages=messages,
@@ -1085,6 +1115,8 @@ RULES:
                         reply = f"All modules done 🎉 For **{user_prompt.strip()}**, generate a fresh goal to keep the momentum going."
             
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
+            # Keep stored history bounded too (welcome msg + last 39 turns)
+            st.session_state.chat_history = st.session_state.chat_history[-40:]
             st.rerun()
 
 # ------------------------------------------
