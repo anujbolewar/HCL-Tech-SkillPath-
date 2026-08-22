@@ -101,11 +101,31 @@ def format_mentor_reply(raw_text: str, next_step: str = "", goal: str = "") -> s
 
 def stream_mentor_reply(text: str):
     """Yield a friendlier word-by-word stream for a chat response."""
+    # Default behavior: no sleep so unit tests stay fast.
+    return stream_mentor_reply_gen(text, speed_ms=0, play=True)
+
+
+def stream_mentor_reply_gen(text: str, speed_ms: int = 0, play: bool = True):
+    """Generator that yields words and optionally sleeps between them.
+
+    - `speed_ms` controls milliseconds to wait between words. 0 = no wait (fast).
+    - `play` when False yields the full text as a single chunk (useful for pause).
+    """
     tokens = (text or "").split()
     if not tokens:
         return
+    if not play:
+        # When paused, emit the whole message at once
+        yield "".join(token + (" " if i < len(tokens) - 1 else "") for i, token in enumerate(tokens))
+        return
+
     for i, token in enumerate(tokens):
         yield token + (" " if i < len(tokens) - 1 else "")
+        if speed_ms and speed_ms > 0:
+            try:
+                time.sleep(speed_ms / 1000.0)
+            except Exception:
+                pass
 
 
 # ==========================================
@@ -272,15 +292,30 @@ WELCOME_MESSAGE = "👋 Hi! I'm your **Groq-Powered SkillPath AI Assistant by Te
 STATE_FILE = Path(".skillpath_state.json")
 
 def persist_state():
-    """Snapshot profile, roadmap, progress and chat to a local JSON file."""
+    """Snapshot profile, roadmap progress, UI intent, and chat to a local JSON file."""
     try:
+        completed_nodes = st.session_state.get("completed_nodes", [])
+        if isinstance(completed_nodes, set):
+            completed_nodes = sorted(completed_nodes)
+        elif not isinstance(completed_nodes, list):
+            completed_nodes = list(completed_nodes) if completed_nodes is not None else []
+
+        chat_history = st.session_state.get("chat_history", [])
+        if not isinstance(chat_history, list):
+            chat_history = []
+
         payload = {
             "user_profile": st.session_state.get("user_profile"),
             "roadmap_data": st.session_state.get("roadmap_data"),
-            "completed_nodes": sorted(st.session_state.get("completed_nodes", set())),
-            "chat_history": st.session_state.get("chat_history", [])[-40:],
+            "completed_nodes": completed_nodes,
+            "chat_history": chat_history[-40:],
+            "demo_mode": bool(st.session_state.get("demo_mode", False)),
+            "goal_box": st.session_state.get("goal_box", ""),
+            "_last_pill": st.session_state.get("_last_pill", ""),
         }
-        STATE_FILE.write_text(json.dumps(payload, ensure_ascii=False))
+        STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with STATE_FILE.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False)
     except Exception:
         pass  # persistence is best-effort; never break the app over IO
 
@@ -289,7 +324,7 @@ def load_persisted_state():
     try:
         if not STATE_FILE.exists():
             return
-        data = json.loads(STATE_FILE.read_text())
+        data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
         if isinstance(data.get("user_profile"), dict):
             st.session_state.user_profile = {**DEFAULT_PROFILE, **data["user_profile"]}
         if isinstance(data.get("roadmap_data"), dict) and data["roadmap_data"].get("phases"):
@@ -298,6 +333,12 @@ def load_persisted_state():
             st.session_state.completed_nodes = set(data["completed_nodes"])
         if isinstance(data.get("chat_history"), list) and data["chat_history"]:
             st.session_state.chat_history = data["chat_history"]
+        if "demo_mode" in data:
+            st.session_state.demo_mode = bool(data["demo_mode"])
+        if "goal_box" in data:
+            st.session_state.goal_box = data["goal_box"]
+        if "_last_pill" in data:
+            st.session_state._last_pill = data["_last_pill"]
     except Exception:
         pass  # corrupt/unreadable file -> start clean
 
@@ -1276,7 +1317,12 @@ with tab_xai:
     
     with col_xai_right:
         st.markdown("### 🤖 AI Mentor — knows your roadmap")
-        
+        # Mentor animation controls (speed and play/pause)
+        st.caption("Mentor animation")
+        # speed in milliseconds per word; default chosen in UI usage below
+        mentor_speed = st.slider("Speed (ms per word)", 0, 400, 60, help="Lower is faster; 0 disables delay", key="mentor_speed")
+        mentor_play = st.toggle("Play animation", key="mentor_play", help="Toggle word-by-word animation")
+
         chat_box = st.container(height=350)
         with chat_box:
             for msg in st.session_state.chat_history:
@@ -1367,7 +1413,13 @@ RULES:
                 goal=roadmap.get("role", st.session_state.user_profile.get("target_role", "")),
             )
             with st.chat_message("assistant"):
-                st.write_stream(stream_mentor_reply(response_for_display))
+                # Use the generator with configured speed and play settings from session
+                try:
+                    gen = stream_mentor_reply_gen(response_for_display, speed_ms=st.session_state.get("mentor_speed", 0), play=st.session_state.get("mentor_play", True))
+                    st.write_stream(gen)
+                except Exception:
+                    # Fallback: write full response if streaming not available
+                    st.markdown(response_for_display)
 
             st.session_state.chat_history.append({"role": "assistant", "content": response_for_display})
             st.session_state.chat_history = st.session_state.chat_history[-40:]
