@@ -633,6 +633,27 @@ def generate_fallback_roadmap(goal: str, profile: dict):
             }
         ]
 
+    # Scale module durations to the learner's weekly commitment
+    # (templates assume a 10 h/week baseline; clamp to half/double)
+    try:
+        hours = int(profile.get("weekly_hours") or 10)
+    except (TypeError, ValueError):
+        hours = 10
+    factor = max(0.5, min(2.0, 10 / max(1, hours)))
+    if abs(factor - 1.0) > 1e-9:
+        scaled_phases = []
+        for phase in phases:
+            scaled_nodes = []
+            for node in phase["nodes"]:
+                node = dict(node)
+                m = re.match(r"^(\d+)\s*weeks?", str(node.get("duration", "")))
+                if m:
+                    weeks = max(1, round(int(m.group(1)) * factor))
+                    node["duration"] = f"{weeks} week" + ("s" if weeks != 1 else "")
+                scaled_nodes.append(node)
+            scaled_phases.append({"phase": phase["phase"], "nodes": scaled_nodes})
+        phases = scaled_phases
+
     return {
         "goal": goal,
         "role": role,
