@@ -29,12 +29,84 @@ try:
 except ImportError:
     HAS_STREAMLIT_FLOW = False
 
-# Fallback list used when the live model catalog cannot be fetched
+# Fallback list used when the live model catalog cannot be fetched.
+# Ordered by quality first, then speed.
 DEFAULT_GROQ_MODELS = [
     "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
     "llama-3.3-70b-versatile",
+    "openai/gpt-oss-20b",
 ]
+
+
+def prioritize_models_for_task(models: list[str], task: str):
+    """Return a task-aware shortlist with the best default model first."""
+    preferred_sequences = {
+        "roadmap": [
+            "openai/gpt-oss-120b",
+            "llama-3.3-70b-versatile",
+            "openai/gpt-oss-20b",
+        ],
+        "mentor": [
+            "openai/gpt-oss-20b",
+            "llama-3.3-70b-versatile",
+            "openai/gpt-oss-120b",
+        ],
+    }
+
+    unique_models = []
+    for model_id in models:
+        if model_id not in unique_models:
+            unique_models.append(model_id)
+
+    ranked_models = []
+    for model_id in preferred_sequences.get(task, []):
+        if model_id in unique_models and model_id not in ranked_models:
+            ranked_models.append(model_id)
+
+    for model_id in unique_models:
+        if model_id not in ranked_models:
+            ranked_models.append(model_id)
+
+    return ranked_models, (ranked_models[0] if ranked_models else "")
+
+
+def format_mentor_reply(raw_text: str, next_step: str = "", goal: str = "") -> str:
+    """Convert raw mentor guidance into a cleaner, structured markdown response."""
+    text = (raw_text or "").strip()
+    if not text:
+        return "### Next move\n- Start with the next unlocked milestone and keep a consistent study rhythm.\n\n### Why this matters\n- Small, consistent wins compound faster than chaotic effort.\n\n### Quick plan\n- Review the current goal.\n- Complete the next milestone.\n- Re-check your progress after each session."
+
+    if "\n###" in text or "\n- " in text or "\n* " in text:
+        return text
+
+    sentences = [part.strip() for part in text.split(". ") if part.strip()]
+    if not sentences:
+        sentences = [text]
+    action_sentence = sentences[0].rstrip('.')
+    support_sentence = ". ".join(sentences[1:]) if len(sentences) > 1 else "This keeps your effort aligned with the learning goal and reduces guesswork."
+    step_label = next_step.strip() or "Your next move"
+    goal_hint = f" for {goal}" if goal else ""
+
+    return (
+        "### Next move\n"
+        f"- **{step_label}** — {action_sentence}{goal_hint}.\n\n"
+        "### Why this matters\n"
+        f"- {support_sentence}\n\n"
+        "### Quick plan\n"
+        "- Review the current module and finish the first milestone.\n"
+        "- Spend a focused block on the next unlocked step.\n"
+        "- Re-check your progress after each session to keep momentum."
+    )
+
+
+def stream_mentor_reply(text: str):
+    """Yield a friendlier word-by-word stream for a chat response."""
+    tokens = (text or "").split()
+    if not tokens:
+        return
+    for i, token in enumerate(tokens):
+        yield token + (" " if i < len(tokens) - 1 else "")
+
 
 # ==========================================
 # PAGE CONFIGURATION & STYLES
@@ -161,6 +233,21 @@ CUSTOM_CSS = """
     section[data-testid="stSidebar"] {
         background-color: #09090b;
         border-right: 1px solid #1f1f23;
+    }
+
+    /* Chat window polish */
+    div[data-testid="stChatMessage"] {
+        background: rgba(24, 24, 27, 0.9);
+        border: 1px solid rgba(39, 39, 42, 0.95);
+        border-radius: 14px;
+        padding: 0.8rem 1rem;
+        margin-bottom: 0.7rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    div[data-testid="stChatMessage"] p {
+        margin: 0.3rem 0;
+        line-height: 1.6;
     }
 </style>
 """
@@ -808,11 +895,23 @@ with st.sidebar:
                 st.session_state[_cache_key] = list(DEFAULT_GROQ_MODELS)
         available_models = st.session_state[_cache_key]
 
-    groq_model_choice = st.selectbox(
-        "Select Groq LLM Model",
-        available_models,
+    roadmap_models, roadmap_default_model = prioritize_models_for_task(available_models, "roadmap")
+    mentor_models, mentor_default_model = prioritize_models_for_task(available_models, "mentor")
+
+    roadmap_model_choice = st.selectbox(
+        "Roadmap model",
+        roadmap_models,
         index=0,
-        help="Models fetched live from your Groq account; falls back to defaults if unreachable"
+        help="Best for generating the learning roadmap and structured long-form output"
+    )
+    mentor_model_choice = st.selectbox(
+        "Mentor chat model",
+        mentor_models,
+        index=0,
+        help="Best for faster chat replies and short guidance"
+    )
+    st.caption(
+        f"Recommended: roadmap = {roadmap_default_model}, mentor chat = {mentor_default_model}."
     )
     
     if groq_key_input:
@@ -920,7 +1019,7 @@ def _generate_roadmap(goal_text: str):
     with st.spinner("⚡ Analyzing your goal, checking skill gaps, and building the DAG roadmap..."):
         if active_key and HAS_GROQ:
             st.session_state.roadmap_data = generate_roadmap_with_groq(
-                goal_text, st.session_state.user_profile, active_key, groq_model_choice)
+                goal_text, st.session_state.user_profile, active_key, roadmap_model_choice)
         else:
             st.session_state.roadmap_data = generate_fallback_roadmap(
                 goal_text, st.session_state.user_profile)
@@ -1189,6 +1288,15 @@ with tab_xai:
             st.session_state.chat_history.append({"role": "user", "content": user_prompt})
             
             active_key = groq_key_input or os.environ.get("GROQ_API_KEY", "")
+            next_node = None
+            next_phase = ""
+            for phase in roadmap["phases"]:
+                for n in phase["nodes"]:
+                    if n["id"] not in st.session_state.completed_nodes and (not n["prereqs"] or all(p in st.session_state.completed_nodes for p in n["prereqs"])):
+                        next_node, next_phase = n, phase["phase"]
+                        break
+                if next_node:
+                    break
 
             if active_key and HAS_GROQ:
                 client = Groq(api_key=active_key)
@@ -1218,14 +1326,15 @@ RULES:
 2. If they ask what to do next, point to the FIRST [NEXT-UNBLOCKED] module and explain its 'why'.
 3. Adapt advice to the domain (music practice, language drills, exam strategy...) — never assume coding.
 4. Keep replies under 150 words, friendly and actionable.
-5. Off-topic questions: answer briefly, then steer back to their learning goal."""
+5. Off-topic questions: answer briefly, then steer back to their learning goal.
+6. Prefer short, structured guidance with a clear action and a reason."""
                     messages = [{"role": "system", "content": system_prompt}]
                     # Cap context window: last 20 turns keeps tokens bounded
                     messages.extend(st.session_state.chat_history[-20:])
 
                     response = client.chat.completions.create(
                         messages=messages,
-                        model=groq_model_choice,
+                        model=mentor_model_choice,
                         max_tokens=500,
                         temperature=0.5
                     )
@@ -1235,16 +1344,6 @@ RULES:
             else:
                 # Roadmap-aware offline mentor (no API key needed)
                 q = user_prompt.lower()
-                done = st.session_state.completed_nodes
-                next_node, next_phase = None, None
-                for phase in roadmap["phases"]:
-                    for n in phase["nodes"]:
-                        if n["id"] not in done and (not n["prereqs"] or all(p in done for p in n["prereqs"])):
-                            next_node, next_phase = n, phase["phase"]
-                            break
-                    if next_node:
-                        break
-
                 if any(k in q for k in ("why", "recommend", "reason")):
                     reply = (f"Your path targets **{roadmap['role']}** at **{st.session_state.user_profile['experience_level']}** level. "
                              f"Each module fills a skill gap toward that goal — open the **Explainable AI** tab on the left for per-module rationale.")
@@ -1261,9 +1360,16 @@ RULES:
                                  f"Add a Groq key in the sidebar for fully personalized AI mentoring!")
                     else:
                         reply = f"All modules done 🎉 For **{user_prompt.strip()}**, generate a fresh goal to keep the momentum going."
-            
-            st.session_state.chat_history.append({"role": "assistant", "content": reply})
-            # Keep stored history bounded too (welcome msg + last 39 turns)
+
+            response_for_display = format_mentor_reply(
+                reply,
+                next_step=(f"{next_node['id']}: {next_node['title']}" if next_node else "Your next move"),
+                goal=roadmap.get("role", st.session_state.user_profile.get("target_role", "")),
+            )
+            with st.chat_message("assistant"):
+                st.write_stream(stream_mentor_reply(response_for_display))
+
+            st.session_state.chat_history.append({"role": "assistant", "content": response_for_display})
             st.session_state.chat_history = st.session_state.chat_history[-40:]
             persist_state()
             st.rerun()

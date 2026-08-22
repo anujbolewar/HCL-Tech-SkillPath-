@@ -9,3 +9,6 @@ mcp==2.0.0
 python-dotenv==1.2.3
 groq==1.6.0
 streamlit-flow-component==1.6.1
+
+
+pytest==9.1.1
