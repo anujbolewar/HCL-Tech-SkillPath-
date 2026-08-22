@@ -639,6 +639,53 @@ def generate_fallback_roadmap(goal: str, profile: dict):
     }
 
 # ==========================================
+# XAI: TRANSPARENT NODE RELEVANCE SCORING
+# ==========================================
+def compute_node_relevance(node: dict, profile: dict, completed_nodes: set, phase_idx: int, total_phases: int):
+    """Deterministic, explainable relevance score (0-100) for a roadmap node.
+
+    Factors:
+      - Skill-gap coverage (/40): rewards teaching skills the learner does NOT have
+      - Prerequisite readiness (/30): how many prereqs are already completed
+      - Experience-phase fit (/30): early phases suit beginners, late phases suit advanced
+    Returns (score:int, breakdown:list[str]).
+    """
+    skills = node.get("skills") or []
+    prereqs = node.get("prereqs") or []
+    breakdown = []
+
+    # Factor 1 - Skill-gap coverage (max 40)
+    known_skills = profile.get("skills") or []
+    gap = sum(1 for s in skills if s not in known_skills)
+    if skills:
+        f_gap = round((gap / len(skills)) * 40, 1)
+        breakdown.append(f"Skill-gap coverage: +{f_gap:.0f}/40 ({gap} of {len(skills)} skills new to you)")
+    else:
+        f_gap = 20.0
+        breakdown.append(f"Skill-gap coverage: +{f_gap:.0f}/40 (no skill tags on this module)")
+
+    # Factor 2 - Prerequisite readiness (max 30)
+    if prereqs:
+        met = sum(1 for p in prereqs if p in completed_nodes)
+        f_prereq = round((met / len(prereqs)) * 30, 1)
+        breakdown.append(f"Prerequisite readiness: +{f_prereq:.0f}/30 ({met}/{len(prereqs)} completed)")
+    else:
+        f_prereq = 30.0
+        breakdown.append("Prerequisite readiness: +30/30 (entry point — no prerequisites)")
+
+    # Factor 3 - Experience-phase fit (max 30)
+    depth = (phase_idx + 1) / max(total_phases, 1)
+    level = profile.get("experience_level") or "Beginner"
+    fit_target = {"Beginner": 0.25, "Intermediate": 0.5, "Advanced": 0.85}.get(level, 0.5)
+    closeness = max(0.0, 1.0 - abs(depth - fit_target))
+    f_fit = round(closeness * 30, 1)
+    phase_no = phase_idx + 1
+    breakdown.append(f"Experience-phase fit: +{f_fit:.0f}/30 ({level} level vs Phase {phase_no} of {total_phases})")
+
+    score = min(100, round(f_gap + f_prereq + f_fit))
+    return score, breakdown
+
+# ==========================================
 # SIDEBAR: PILLAR 2 & GROQ CONFIGURATION
 # ==========================================
 with st.sidebar:
