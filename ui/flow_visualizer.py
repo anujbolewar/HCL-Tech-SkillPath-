@@ -91,7 +91,7 @@ def render_dag_flowchart(
 
         flow_state = StreamlitFlowState(flow_nodes, flow_edges)
 
-        flow_col, side_ctrl = st.columns([3.5, 1])
+        flow_col, side_ctrl = st.columns([3.5, 1], vertical_alignment="top")
         with side_ctrl:
             node_options = ["None (Click node or select)"] + list(all_nodes_dict.keys())
             curr_idx = 0

@@ -1,7 +1,7 @@
 """Ultra-refined design system and stylesheet for PathFinder AI.
 
 Crafted with aesthetic restraint: deep slate surfaces (#080C14, #0F1626, #162035),
-disciplined 8px spatial grid, Outfit & Inter typography, and zero decorative AI fluff.
+disciplined 8px spatial grid, Outfit & Inter typography, and perfect vertical alignments.
 """
 
 CUSTOM_CSS = """
@@ -25,7 +25,7 @@ CUSTOM_CSS = """
         font-family: 'JetBrains Mono', monospace !important;
     }
 
-    /* Core Canvas Background: Clean, deep obsidian (no blobs/gradients) */
+    /* Core Canvas Background: Clean, deep obsidian */
     .stApp {
         background-color: #080C14;
         color: #F8FAFC;
@@ -46,6 +46,15 @@ CUSTOM_CSS = """
     
     section[data-testid="stSidebar"] .block-container {
         padding-top: 1.5rem !important;
+    }
+
+    /* Native Container Border Styling */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background-color: #0F1626 !important;
+        border: 1px solid #1E293B !important;
+        border-radius: 10px !important;
+        padding: 6px 10px !important;
+        margin-bottom: 14px !important;
     }
 
     /* Compact App Header (54px) */
@@ -85,34 +94,7 @@ CUSTOM_CSS = """
         font-weight: 500;
     }
 
-    /* Skill Gap Diagnostic Card */
-    .skill-gap-card {
-        background: #0F1626;
-        border: 1px solid #1E293B;
-        border-radius: 10px;
-        padding: 18px 22px;
-        margin-bottom: 16px;
-    }
-
-    .skill-gap-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #162035;
-    }
-
-    .skill-gap-title {
-        font-family: 'Outfit', sans-serif;
-        font-size: 0.95rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #94A3B8;
-    }
-
-    /* Next Best Action Card (Prominent & Actionable) */
+    /* Next Best Action Card */
     .next-action-card {
         background: #0F1626;
         border: 1px solid #3B82F6;
@@ -150,7 +132,6 @@ CUSTOM_CSS = """
         font-size: 0.9rem;
         color: #CBD5E1;
         line-height: 1.5;
-        margin-bottom: 12px;
         background: #162035;
         padding: 10px 14px;
         border-radius: 6px;
@@ -171,7 +152,7 @@ CUSTOM_CSS = """
         gap: 10px;
     }
 
-    /* Module / Milestone Items */
+    /* Milestone Cards */
     .milestone-card {
         background: #0F1626;
         border: 1px solid #1E293B;
@@ -219,7 +200,7 @@ CUSTOM_CSS = """
         line-height: 1.5;
     }
 
-    /* Single Status Indicators (Clean, no rainbow) */
+    /* Status Indicators */
     .status-tag {
         display: inline-flex;
         align-items: center;
@@ -256,11 +237,30 @@ CUSTOM_CSS = """
         margin-top: 14px;
     }
 
-    /* Button Polish */
+    /* Progress Bar Restyling */
+    div[data-testid="stProgress"] > div > div > div > div {
+        background-color: #3B82F6;
+        border-radius: 999px;
+    }
+    div[data-testid="stProgress"] > div > div {
+        background-color: #162035;
+        border-radius: 999px;
+        height: 6px !important;
+    }
+
+    /* Input & Button Alignment Fixes */
+    div[data-testid="stTextInput"] {
+        margin-bottom: 0 !important;
+    }
+
     .stButton > button {
         font-family: 'Inter', sans-serif !important;
         font-weight: 500 !important;
         border-radius: 6px !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
 
     .stButton > button[kind="primary"] {
@@ -273,7 +273,7 @@ CUSTOM_CSS = """
         background: #4338CA !important;
     }
 
-    /* Streamlit Tabs Styling (Clean pill navigation) */
+    /* Streamlit Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 6px;
         background-color: #0B101D;

@@ -20,7 +20,7 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
             status = get_node_status(node, completed_nodes)
             prereqs_met = (status != "locked")
 
-            c_card, c_action = st.columns([4.2, 1])
+            c_card, c_action = st.columns([4.2, 1], vertical_alignment="center")
 
             with c_card:
                 card_class = (
@@ -56,8 +56,6 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
                 """, unsafe_allow_html=True)
 
             with c_action:
-                st.write(" ")
-                st.write(" ")
                 if is_done:
                     if st.button("✓ Completed", key=f"rec_undo_{node_id}", use_container_width=True):
                         completed_nodes.remove(node_id)

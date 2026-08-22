@@ -22,7 +22,7 @@ def render_app_header(role_title: str = "Personalized Curriculum") -> None:
 
 
 def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
-    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap diagnostic."""
+    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap diagnostic using native container."""
     known_skills = set(profile.get("skills") or [])
     
     # Collect all skills targeted across the roadmap
@@ -35,45 +35,47 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
 
     identified_gaps = [s for s in target_skills if s not in known_skills]
     
-    st.markdown("""
-    <div class="skill-gap-card">
-        <div class="skill-gap-header">
-            <div class="skill-gap-title">Learner Diagnostic & Skill Gap Map</div>
-            <div style="font-size:0.82rem; color:#94A3B8;">Paced for <strong>""" + str(profile.get('weekly_hours', 15)) + """ hrs/week</strong> (Level: """ + str(profile.get('experience_level', 'Intermediate')) + """)</div>
+    with st.container(border=True):
+        st.markdown(f"""
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #1E293B; padding-bottom:8px;">
+            <span style="font-family:'Outfit',sans-serif; font-size:0.92rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#94A3B8;">
+                Learner Diagnostic & Skill Gap Map
+            </span>
+            <span style="font-size:0.82rem; color:#94A3B8;">
+                Paced for <strong>{profile.get('weekly_hours', 15)} hrs/week</strong> (Level: {profile.get('experience_level', 'Intermediate')})
+            </span>
         </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("<strong style='font-size:0.85rem; color:#94A3B8;'>CURRENT BASELINE:</strong>", unsafe_allow_html=True)
-        if known_skills:
-            for s in list(known_skills)[:4]:
-                st.markdown(f"""
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
-                    <span>{s}</span>
-                    <span style="color:#34D399; font-weight:600;">Verified Mastered</span>
-                </div>
-                """, unsafe_allow_html=True)
-                st.progress(0.85)
-        else:
-            st.caption("No prior skills declared (Foundational beginner track).")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("<div style='font-size:0.82rem; font-weight:700; color:#94A3B8; margin-bottom:8px;'>CURRENT BASELINE:</div>", unsafe_allow_html=True)
+            if known_skills:
+                for s in list(known_skills)[:4]:
+                    st.markdown(f"""
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-size:0.85rem;">
+                        <span>{s}</span>
+                        <span style="color:#34D399; font-weight:600;">Verified Mastered</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.progress(0.85)
+            else:
+                st.caption("No prior skills declared (Foundational beginner track).")
 
-    with col2:
-        st.markdown("<strong style='font-size:0.85rem; color:#94A3B8;'>IDENTIFIED GAPS TO BRIDGE:</strong>", unsafe_allow_html=True)
-        if identified_gaps:
-            for s in identified_gaps[:4]:
-                st.markdown(f"""
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
-                    <span>{s}</span>
-                    <span style="color:#60A5FA; font-weight:500;">Gap Target</span>
-                </div>
-                """, unsafe_allow_html=True)
-                st.progress(0.20)
-        else:
-            st.caption("All targeted skills align with your baseline.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
+        with col2:
+            st.markdown("<div style='font-size:0.82rem; font-weight:700; color:#94A3B8; margin-bottom:8px;'>IDENTIFIED GAPS TO BRIDGE:</div>", unsafe_allow_html=True)
+            if identified_gaps:
+                for s in identified_gaps[:4]:
+                    st.markdown(f"""
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px; font-size:0.85rem;">
+                        <span>{s}</span>
+                        <span style="color:#60A5FA; font-weight:500;">Gap Target</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.progress(0.20)
+            else:
+                st.caption("All targeted skills align with your baseline.")
 
 
 def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:

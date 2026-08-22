@@ -228,7 +228,8 @@ if selected_pill and selected_pill != st.session_state.get("_last_pill"):
     st.session_state.goal_box = QUICK_PICKS[selected_pill]
     _execute_roadmap_generation(QUICK_PICKS[selected_pill])
 
-col_query, col_btn = st.columns([4, 1])
+# Perfectly aligned goal search bar & button
+col_query, col_btn = st.columns([4.2, 1], vertical_alignment="center")
 with col_query:
     goal_query = st.text_input(
         "Enter your learning goal:",
@@ -293,7 +294,7 @@ with tab_roadmap:
     render_recommendation_cards(roadmap, st.session_state.completed_nodes)
 
 with tab_mentor_analytics:
-    col_analytics, col_mentor = st.columns([1.1, 1.2])
+    col_analytics, col_mentor = st.columns([1.1, 1.2], vertical_alignment="top")
 
     with col_analytics:
         # Dynamic Skill Competency Polar Radar
@@ -306,7 +307,7 @@ with tab_mentor_analytics:
         st.markdown("#### Export Curriculum")
         stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)
 
-        exp_c1, exp_c2, exp_c3 = st.columns(3)
+        exp_c1, exp_c2, exp_c3 = st.columns(3, vertical_alignment="center")
         with exp_c1:
             st.download_button(
                 "JSON",
