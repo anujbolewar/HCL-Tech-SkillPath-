@@ -24,8 +24,8 @@ def render_dag_flowchart(
     profile: Dict[str, Any]
 ) -> None:
     """Renders the interactive React Flow DAG canvas and node inspector."""
-    st.subheader("🔀 Prerequisite-Aware Directed Acyclic Graph (DAG) Canvas")
-    st.caption("Interactive 2D React Flow canvas powered by `streamlit-flow-component` with drag, pan, zoom, and prerequisite animations.")
+    st.markdown("### Interactive Curriculum DAG Canvas")
+    st.caption("2D topological flowchart. Click any node on canvas or pick from the dropdown to inspect prerequisite rationales and skill coverage.")
 
     all_nodes_dict: Dict[str, Dict[str, Any]] = {}
     node_phase_map: Dict[str, int] = {}
@@ -38,6 +38,24 @@ def render_dag_flowchart(
 
     selected_node_id = st.session_state.get("selected_node_id")
 
+    # Legend bar
+    st.markdown("""
+    <div style="display:flex; gap:16px; align-items:center; margin-bottom:14px; font-size:0.8rem; color:#94a3b8;">
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span style="width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block;"></span>
+            <strong>Completed</strong>
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span style="width:10px; height:10px; border-radius:50%; background:#38bdf8; display:inline-block;"></span>
+            <strong>Ready to Start</strong>
+        </span>
+        <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span style="width:10px; height:10px; border-radius:50%; background:#475569; display:inline-block;"></span>
+            <strong>Locked (Prerequisites Pending)</strong>
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
     if HAS_STREAMLIT_FLOW:
         flow_nodes = []
         flow_edges = []
@@ -47,17 +65,17 @@ def render_dag_flowchart(
                 node_id = node["id"]
                 status = get_node_status(node, completed_nodes)
                 
-                pos_x = phase_idx * 300
-                pos_y = node_idx * 140 - 30
+                pos_x = phase_idx * 310
+                pos_y = node_idx * 140 - 20
 
                 if status == "completed":
-                    status_tag = "✓ DONE"
+                    status_tag = "✓ Mastered"
                 elif status == "ready":
-                    status_tag = "▶ READY"
+                    status_tag = "▶ Unlocked"
                 else:
-                    status_tag = "🔒 LOCKED"
+                    status_tag = "🔒 Locked"
 
-                label = f"{node_id}: {node['title']}\n({node.get('duration', '2w')}) [{status_tag}]"
+                label = f"{node_id}: {node['title']}\n{node.get('duration', '2w')} • {status_tag}"
 
                 flow_node = StreamlitFlowNode(
                     id=node_id,
@@ -81,18 +99,19 @@ def render_dag_flowchart(
 
         flow_state = StreamlitFlowState(flow_nodes, flow_edges)
 
-        flow_col, side_ctrl = st.columns([3, 1])
+        flow_col, side_ctrl = st.columns([3.2, 1])
         with side_ctrl:
-            st.markdown("#### 🎯 Quick Node Picker")
+            st.markdown("#### Inspect Module")
             node_options = ["None (Select a node)"] + list(all_nodes_dict.keys())
             curr_idx = 0
             if selected_node_id in all_nodes_dict:
                 curr_idx = node_options.index(selected_node_id)
             
             picked = st.selectbox(
-                "Inspect Node 'Why':",
+                "Choose Node:",
                 node_options,
                 index=curr_idx,
+                label_visibility="collapsed",
                 help="Select any node to view its Explainable AI rationale and skill gap breakdown."
             )
             if picked != "None (Select a node)":
@@ -103,7 +122,7 @@ def render_dag_flowchart(
             event = streamlit_flow(
                 key="learning_path_flow",
                 state=flow_state,
-                height=450,
+                height=420,
                 fit_view=True,
                 show_minimap=True,
                 show_controls=True,
@@ -123,26 +142,26 @@ def render_dag_flowchart(
 
         for phase_idx, phase in enumerate(roadmap.get("phases", [])):
             with dot.subgraph(name=f"cluster_{phase_idx}") as c:
-                c.attr(label=phase.get("phase", ""), color="#4facfe", style="dashed", fontcolor="#00f2fe")
+                c.attr(label=phase.get("phase", ""), color="#6366f1", style="dashed", fontcolor="#818cf8")
                 for node in phase.get("nodes", []):
                     status = get_node_status(node, completed_nodes)
                     if status == "completed":
-                        bg_color, text_color, border_color, tag = "#10b981", "#ffffff", "#34d399", "✓ DONE"
+                        bg_color, text_color, border_color, tag = "#064e3b", "#ffffff", "#10b981", "✓ Mastered"
                     elif status == "ready":
-                        bg_color, text_color, border_color, tag = "#1e293b", "#f3f4f6", "#38bdf8", "▶ READY"
+                        bg_color, text_color, border_color, tag = "#0f172a", "#f8fafc", "#38bdf8", "▶ Unlocked"
                     else:
-                        bg_color, text_color, border_color, tag = "#0f172a", "#94a3b8", "#475569", "🔒 LOCKED"
+                        bg_color, text_color, border_color, tag = "#090d16", "#64748b", "#334155", "🔒 Locked"
 
-                    label_text = f"{node['id']}: {node['title']}\\n({node.get('duration', '')}) [{tag}]"
-                    c.node(node["id"], label=label_text, fillcolor=bg_color, fontcolor=text_color, color=border_color, penwidth="2")
+                    label_text = f"{node['id']}: {node['title']}\\n{node.get('duration', '')} • {tag}"
+                    c.node(node["id"], label=label_text, fillcolor=bg_color, fontcolor=text_color, color=border_color, penwidth="1.5")
 
                     for prereq in node.get("prereqs", []):
-                        dot.edge(prereq, node["id"], color="#38bdf8", penwidth="1.5")
+                        dot.edge(prereq, node["id"], color="#818cf8", penwidth="1.5")
 
         st.graphviz_chart(dot, width="stretch")
 
         node_options = ["None (Select a node)"] + list(all_nodes_dict.keys())
-        picked = st.selectbox("Inspect Node 'Why':", node_options, index=0)
+        picked = st.selectbox("Inspect Module:", node_options, index=0)
         if picked != "None (Select a node)":
             selected_node_id = picked
             st.session_state.selected_node_id = picked
@@ -156,4 +175,4 @@ def render_dag_flowchart(
         )
         render_node_inspector(node_obj, score, breakdown)
     else:
-        st.info("💡 **Click any node in the DAG above** or select from the dropdown to instantly reveal its **Explainable AI (Why)** rationale, prerequisite dependencies, and skill gap coverage!")
+        st.info("💡 **Click any node in the flowchart** or choose from the dropdown to view why it was recommended, its prerequisite chain, and target skill gaps.")

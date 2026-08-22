@@ -1,8 +1,4 @@
-"""Dynamic Skill Competency Radar Chart component.
-
-Recalculates competency metrics in real-time based on the active learning goal,
-the user's baseline skills, and completed milestones upon every re-render.
-"""
+"""Dynamic Skill Competency Radar Chart component."""
 
 from collections import Counter
 from typing import Dict, Any, Set, List
@@ -15,7 +11,7 @@ def render_dynamic_radar_chart(
     completed_nodes: Set[str]
 ) -> None:
     """Renders dynamic Polar Radar Chart reflecting real-time skill acquisition."""
-    st.markdown("### 🕸️ Adaptive Skill Competency Radar")
+    st.markdown("### Skill Competency Radar")
     st.caption("Real-time competency tracking across 6 core skill dimensions derived from your active curriculum.")
 
     # Extract all skills from this roadmap
@@ -32,7 +28,7 @@ def render_dynamic_radar_chart(
 
     # Fallback to defaults if no skills found
     if len(top_skills) < 3:
-        top_skills = ["Foundations", "Problem Solving", "Applied Practice", "Tooling", "Domain Theory", "Capstone"]
+        top_skills = ["Core Theory", "Applied Practice", "Tooling", "Problem Solving", "Domain Synthesis", "Capstone"]
 
     known_skills = set(profile.get("skills") or [])
     exp_level = profile.get("experience_level", "Intermediate")
@@ -42,12 +38,10 @@ def render_dynamic_radar_chart(
     current_vals = []
 
     for skill in top_skills:
-        # Base value: higher if skill was in user's profile
         is_known = skill in known_skills or any(k.lower() in skill.lower() for k in known_skills)
         base = max(base_level_val, 50) if is_known else base_level_val
         base_vals.append(base)
 
-        # Increment competency based on completed nodes teaching this skill
         milestones_done = sum(
             1
             for phase in roadmap.get("phases", [])
@@ -55,7 +49,6 @@ def render_dynamic_radar_chart(
             if skill in (node.get("skills") or []) and node["id"] in completed_nodes
         )
         
-        # Skill boost per completed milestone
         boost = min(45, milestones_done * 22)
         current = min(100, base + boost)
         current_vals.append(current)
@@ -72,18 +65,18 @@ def render_dynamic_radar_chart(
         theta=theta_loop,
         fill="toself",
         name="Baseline Profile",
-        line_color="#38bdf8",
-        fillcolor="rgba(56, 189, 248, 0.15)",
-        line=dict(width=2, dash="dot")
+        line_color="#64748b",
+        fillcolor="rgba(100, 116, 139, 0.12)",
+        line=dict(width=1.5, dash="dot")
     ))
 
     fig.add_trace(go.Scatterpolar(
         r=curr_loop,
         theta=theta_loop,
         fill="toself",
-        name="Current Mastery",
-        line_color="#10b981",
-        fillcolor="rgba(16, 185, 129, 0.28)",
+        name="Current Competency",
+        line_color="#6366f1",
+        fillcolor="rgba(99, 102, 241, 0.25)",
         line=dict(width=2.5)
     ))
 
@@ -92,14 +85,14 @@ def render_dynamic_radar_chart(
             radialaxis=dict(
                 visible=True,
                 range=[0, 100],
-                tickfont=dict(color="#a1a1aa", size=9),
-                gridcolor="#27272a",
-                linecolor="#27272a"
+                tickfont=dict(color="#64748b", size=9),
+                gridcolor="rgba(255, 255, 255, 0.07)",
+                linecolor="rgba(255, 255, 255, 0.07)"
             ),
             angularaxis=dict(
-                tickfont=dict(color="#f4f4f5", size=11, family="Space Grotesk"),
-                gridcolor="#27272a",
-                linecolor="#27272a"
+                tickfont=dict(color="#e2e8f0", size=11, family="Outfit"),
+                gridcolor="rgba(255, 255, 255, 0.07)",
+                linecolor="rgba(255, 255, 255, 0.07)"
             ),
             bgcolor="rgba(0,0,0,0)"
         ),
@@ -107,15 +100,15 @@ def render_dynamic_radar_chart(
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.25,
+            y=-0.22,
             xanchor="center",
             x=0.5,
-            font=dict(color="#d4d4d8", size=11)
+            font=dict(color="#94a3b8", size=11)
         ),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=35, r=35, t=30, b=50),
-        height=380
+        margin=dict(l=30, r=30, t=20, b=45),
+        height=360
     )
 
     st.plotly_chart(fig, use_container_width=True)

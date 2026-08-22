@@ -1,166 +1,301 @@
-"""Modern UI stylesheet for PathFinder AI.
+"""Ultra-refined design system and stylesheet for PathFinder AI.
 
-Implements a shadcn/zinc pure-black dark aesthetic with glassmorphic cards,
-Space Grotesk typography, subtle borders, and comprehensive mobile responsiveness.
+Crafted with high-end taste: deep slate surfaces, Outfit & Inter typography,
+subtle glowing borders, refined spatial discipline, and zero visual clutter.
 """
 
 CUSTOM_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    html, body, [class*="css"] {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Global reset & typography */
+    html, body, [class*="css"], .stMarkdown, p, span, label, div {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #e2e8f0;
     }
 
-    /* Typography & Headers */
-    h1, h2, h3, .hero-title, .metric-val, .course-title, .node-header-title {
-        font-family: 'Space Grotesk', 'Inter', sans-serif !important;
-        letter-spacing: -0.02em;
+    h1, h2, h3, h4, h5, h6, .brand-title, .metric-num, .card-heading {
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+        letter-spacing: -0.025em;
+        font-weight: 700;
     }
 
-    /* Core background */
+    code, pre {
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* Core Canvas Background */
     .stApp {
-        background: #09090b;
-        color: #fafafa;
+        background-color: #080b11;
+        background-image: 
+            radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.07) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, rgba(56, 189, 248, 0.05) 0px, transparent 50%);
+        background-attachment: fixed;
     }
 
-    /* Hero Card */
-    .hero-card {
-        background: linear-gradient(135deg, #121215 0%, #18181b 100%);
-        border: 1px solid #27272a;
-        border-radius: 12px;
-        padding: 26px 30px;
-        margin-bottom: 22px;
-        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+    /* Remove Streamlit default top padding */
+    .block-container {
+        padding-top: 2rem !important;
+        padding-bottom: 3rem !important;
+        max-width: 1280px !important;
     }
 
-    .hero-title {
-        background: linear-gradient(92deg, #fafafa 15%, #c7d2fe 60%, #93c5fd 100%);
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] {
+        background-color: #0b0f19 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+    }
+    
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 2rem !important;
+    }
+
+    /* Hero Header */
+    .hero-container {
+        background: linear-gradient(180deg, rgba(18, 24, 38, 0.8) 0%, rgba(13, 18, 30, 0.6) 100%);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 32px 36px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    }
+
+    .hero-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.6), rgba(56, 189, 248, 0.6), transparent);
+    }
+
+    .brand-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(99, 102, 241, 0.12);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        color: #a5b4fc;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        margin-bottom: 12px;
+        letter-spacing: 0.02em;
+    }
+
+    .brand-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 8px;
+        line-height: 1.15;
+    }
+
+    .brand-title span {
+        background: linear-gradient(135deg, #818cf8 0%, #38bdf8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-size: 2.3rem;
-        font-weight: 700;
-        letter-spacing: -0.03em;
-        margin-bottom: 8px;
     }
 
-    .hero-subtitle {
-        color: #a1a1aa;
+    .hero-desc {
+        color: #94a3b8;
         font-size: 0.98rem;
-        line-height: 1.55;
+        line-height: 1.6;
+        max-width: 780px;
     }
 
-    /* Metric Summary Cards */
-    .metric-container {
-        background: #111114;
-        border: 1px solid #27272a;
-        border-radius: 10px;
-        padding: 16px;
-        text-align: center;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    /* Metric Summary Ribbon */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 24px;
     }
 
-    .metric-container:hover {
-        background: #16161a;
-        border-color: #3f3f46;
-        transform: translateY(-1px);
+    .metric-card {
+        background: #0f1523;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 16px 20px;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .metric-val {
-        font-size: 1.45rem;
-        font-weight: 700;
-        color: #fafafa;
+    .metric-card:hover {
+        background: #141c2e;
+        border-color: rgba(99, 102, 241, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     }
 
     .metric-lbl {
         font-size: 0.72rem;
-        color: #a1a1aa;
+        font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-top: 4px;
+        letter-spacing: 0.06em;
+        color: #64748b;
+        margin-bottom: 4px;
     }
 
-    /* Badges */
-    .badge {
-        display: inline-block;
-        padding: 3px 9px;
-        border-radius: 6px;
-        font-size: 0.74rem;
+    .metric-num {
+        font-size: 1.45rem;
+        font-weight: 700;
+        color: #f8fafc;
+    }
+
+    /* Glassmorphic Section Cards */
+    .glass-card {
+        background: #0e1320;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 22px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Course / Module Milestone Cards */
+    .module-item {
+        background: #111726;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 18px 22px;
+        margin-bottom: 14px;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .module-item:hover {
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 4px 16px rgba(99, 102, 241, 0.08);
+    }
+
+    .module-item.completed {
+        background: rgba(16, 185, 129, 0.04);
+        border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .module-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .module-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.08rem;
         font-weight: 600;
+        color: #f1f5f9;
+        margin: 6px 0;
+    }
+
+    .module-why {
+        color: #94a3b8;
+        font-size: 0.88rem;
+        line-height: 1.5;
+        margin-bottom: 10px;
+    }
+
+    /* Clean Pill Tags */
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 500;
         margin-right: 6px;
         margin-bottom: 4px;
     }
 
-    .badge-primary { background: rgba(79, 172, 254, 0.12); color: #7cc4ff; border: 1px solid rgba(79, 172, 254, 0.25); }
-    .badge-success { background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
-    .badge-warning { background: rgba(245, 158, 11, 0.12); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25); }
-    .badge-purple { background: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); }
-    .badge-muted { background: rgba(113, 113, 122, 0.15); color: #a1a1aa; border: 1px solid rgba(113, 113, 122, 0.3); }
+    .tag-blue { background: rgba(56, 189, 248, 0.1); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.2); }
+    .tag-emerald { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .tag-amber { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .tag-indigo { background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
+    .tag-slate { background: rgba(148, 163, 184, 0.1); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.2); }
 
-    /* Course Cards */
-    .course-card {
-        background: #111114;
-        border: 1px solid #27272a;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 16px;
-        transition: border-color 0.18s ease, box-shadow 0.18s ease;
-    }
-
-    .course-card:hover {
-        border-color: #3b82f6;
-        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.15);
-    }
-
-    .course-card-completed {
-        background: #0d1a14;
-        border-color: rgba(16, 185, 129, 0.4);
-    }
-
-    .course-title {
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: #f4f4f5;
-        margin: 8px 0 4px 0;
-    }
-
-    /* Node Inspector Panel (The "Why" panel on DAG) */
-    .node-inspector-card {
-        background: #131317;
-        border: 1px solid #3b82f6;
-        border-radius: 10px;
-        padding: 18px 22px;
-        margin-top: 14px;
-        box-shadow: 0 4px 18px rgba(59, 130, 246, 0.18);
-        animation: fadeIn 0.25s ease-in-out;
+    /* Node Inspector Panel */
+    .inspector-panel {
+        background: #111728;
+        border: 1px solid rgba(99, 102, 241, 0.35);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-top: 16px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(6px); }
+        from { opacity: 0; transform: translateY(4px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Responsive Mobile Breakpoints */
+    /* Buttons & Inputs Polish */
+    .stButton > button {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        transition: all 0.15s ease !important;
+    }
+
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3) !important;
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%) !important;
+        box-shadow: 0 6px 18px rgba(79, 70, 229, 0.45) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Streamlit Tabs Styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #0b0f19;
+        padding: 6px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 500;
+        font-size: 0.92rem;
+        padding: 8px 16px;
+        border-radius: 6px;
+        color: #94a3b8;
+        border: none !important;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background-color: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 600;
+    }
+
+    /* Responsive adjustments */
     @media (max-width: 768px) {
-        .hero-title {
-            font-size: 1.7rem;
+        .metric-grid {
+            grid-template-columns: repeat(2, 1fr);
         }
-        .hero-card {
-            padding: 18px;
+        .hero-container {
+            padding: 20px;
         }
-        .metric-val {
-            font-size: 1.2rem;
-        }
-        .metric-container {
-            margin-bottom: 8px;
-            padding: 12px;
+        .brand-title {
+            font-size: 1.65rem;
         }
     }
 </style>
 """
 
 def inject_custom_styles() -> None:
-    """Injects custom CSS styles into the Streamlit app."""
+    """Injects refined CSS into the Streamlit application."""
     import streamlit as st
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)

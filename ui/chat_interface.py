@@ -10,10 +10,10 @@ from engine.gemini_engine import stream_gemini_chat_response, HAS_GEMINI
 from engine.llm_router import generate_offline_streaming_mentor_reply
 
 SUGGESTED_PROMPTS = [
-    "👉 What should I focus on next?",
-    "💡 Why was my Phase 2 project recommended?",
-    "📅 Plan a weekly study routine for my hours",
-    "📚 Recommend additional free resources",
+    "👉 What should I do next?",
+    "💡 Why was my Phase 2 project chosen?",
+    "📅 Recommend a weekly study plan",
+    "📚 Additional free practice resources"
 ]
 
 def build_mentor_system_prompt(roadmap: Dict[str, Any], profile: Dict[str, Any], completed_nodes: Set[str]) -> str:
@@ -26,7 +26,7 @@ def build_mentor_system_prompt(roadmap: Dict[str, Any], profile: Dict[str, Any],
         f"ORIGINAL GOAL: {roadmap.get('goal', '')}",
         f"EXPERIENCE LEVEL: {profile.get('experience_level', 'Intermediate')} | WEEKLY HOURS: {profile.get('weekly_hours', 15)}",
         f"PROGRESS: {len(done)}/{total_nodes} milestones completed",
-        "FULL CURRICULUM ROADMAP:"
+        "CURRICULUM ROADMAP:"
     ]
 
     for phase in roadmap.get("phases", []):
@@ -43,17 +43,16 @@ def build_mentor_system_prompt(roadmap: Dict[str, Any], profile: Dict[str, Any],
 
     roadmap_context = "\n".join(ctx_lines)
 
-    return f"""You are SkillPath AI Mentor by Team Cortex — a friendly, expert learning architect and coach.
-The learner's COMPLETE personalized roadmap is provided below. Answer queries STRICTLY anchored in this curriculum context.
+    return f"""You are PathFinder AI Mentor by Team Cortex — an expert, encouraging curriculum mentor.
+The student's COMPLETE personalized roadmap is provided below. Answer queries STRICTLY anchored in this roadmap context.
 
 {roadmap_context}
 
-CRITICAL RULES:
-1. Always cite specific milestone IDs (e.g. "AI101", "FS201") and course titles when answering.
+RULES:
+1. Reference specific module IDs (e.g. "AI101", "FS201") and titles when guiding.
 2. If asked what to do next, point directly to the FIRST [NEXT-UNBLOCKED] milestone and explain its rationale.
-3. Adapt your pedagogical tone to the domain (e.g. music practice vs coding vs language immersion vs exam prep).
-4. Keep responses concise, encouraging, and highly actionable (under 160 words).
-5. Format key recommendations with clean Markdown bullet points and bold tags.
+3. Keep responses concise, friendly, and practical (under 140 words).
+4. Use clean Markdown bullet points where appropriate.
 """
 
 
@@ -67,8 +66,8 @@ def render_ai_mentor_chat(
     gemini_api_key: str = ""
 ) -> None:
     """Renders the AI Mentor conversational window with real-time streaming."""
-    st.markdown("### 🤖 SkillPath AI Mentor")
-    st.caption("Context-aware AI mentor grounded in your active roadmap, prerequisites, and skill progression.")
+    st.markdown("### AI Learning Mentor")
+    st.caption("Context-aware AI mentor grounded in your active roadmap and completed prerequisites.")
 
     # Suggested prompt chips
     st.markdown("<div style='margin-bottom:8px;'>", unsafe_allow_html=True)
@@ -81,14 +80,14 @@ def render_ai_mentor_chat(
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Chat history display container
-    chat_container = st.container(height=360)
+    chat_container = st.container(height=340)
     with chat_container:
         for msg in st.session_state.get("chat_history", []):
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
     # User input
-    typed_prompt = st.chat_input("Ask about prerequisites, recommended projects, study plans, or explanations...")
+    typed_prompt = st.chat_input("Ask about prerequisites, study routines, or module guidance...")
     active_prompt = prompt_to_send or typed_prompt
 
     if active_prompt:
@@ -122,7 +121,6 @@ def render_ai_mentor_chat(
                 full_reply = st.write_stream(stream_generator)
 
         st.session_state.chat_history.append({"role": "assistant", "content": full_reply})
-        # Bound stored history to avoid memory bloat
         st.session_state.chat_history = st.session_state.chat_history[-40:]
         persist_state()
         st.rerun()
