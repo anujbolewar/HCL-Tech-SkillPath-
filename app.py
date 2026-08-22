@@ -27,6 +27,13 @@ try:
 except ImportError:
     HAS_STREAMLIT_FLOW = False
 
+# Fallback list used when the live model catalog cannot be fetched
+DEFAULT_GROQ_MODELS = [
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "llama-3.3-70b-versatile",
+]
+
 # ==========================================
 # PAGE CONFIGURATION & STYLES
 # ==========================================
@@ -647,11 +654,26 @@ with st.sidebar:
         help="Paste your Groq Cloud API Key starting with gsk_"
     )
     
+    # Fetch the live model catalog for this key (cached per session)
+    _key_for_models = groq_key_input or os.environ.get("GROQ_API_KEY", "")
+    available_models = list(DEFAULT_GROQ_MODELS)
+    if _key_for_models and HAS_GROQ:
+        _cache_key = f"_groq_models_{_key_for_models[:10]}"
+        if _cache_key not in st.session_state:
+            try:
+                _models_client = Groq(api_key=_key_for_models)
+                st.session_state[_cache_key] = sorted(
+                    m.id for m in _models_client.models.list().data
+                )
+            except Exception:
+                st.session_state[_cache_key] = list(DEFAULT_GROQ_MODELS)
+        available_models = st.session_state[_cache_key]
+
     groq_model_choice = st.selectbox(
         "Select Groq LLM Model",
-        ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.6-27b"],
+        available_models,
         index=0,
-        help="Only models available on your Groq account are listed"
+        help="Models fetched live from your Groq account; falls back to defaults if unreachable"
     )
     
     if groq_key_input:
