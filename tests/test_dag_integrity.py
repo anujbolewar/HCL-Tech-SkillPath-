@@ -4,6 +4,7 @@ from collections import defaultdict, deque
 import pytest
 
 from engine.fallback_data import DOMAIN_TEMPLATES, generate_fallback_roadmap
+from engine.re_router import apply_diagnostic_assessment
 
 def has_cycle(nodes_dict: dict) -> bool:
     """Detects if a directed graph contains a cycle using Kahn's algorithm."""
@@ -59,3 +60,52 @@ def test_universal_scaffolds_are_strict_dags():
         nodes = {n["id"]: n for phase in rm["phases"] for n in phase["nodes"]}
         assert len(nodes) == 6
         assert not has_cycle(nodes)
+
+
+def test_apply_diagnostic_assessment_inserts_valid_dag_nodes():
+    """Verify adaptive assessment weakness splices valid remedial nodes into DAG without cycles."""
+    base_roadmap = generate_fallback_roadmap("Become an AI & Machine Learning Engineer", {"weekly_hours": 15})
+    
+    adapted_rm, event = apply_diagnostic_assessment(
+        roadmap=base_roadmap,
+        skill_topic="Retrieval & Vector Search",
+        score=42,
+        profile={"weekly_hours": 15}
+    )
+
+    assert event is not None
+    assert event["adapted"] is True
+    assert event["score"] == 42
+    assert len(event["inserted_nodes"]) == 2
+
+    # Verify total nodes increased by 2
+    nodes = {n["id"]: n for phase in adapted_rm["phases"] for n in phase["nodes"]}
+    assert len(nodes) == 8
+    assert "REM101" in nodes
+    assert "REM102" in nodes
+
+    # Verify no dangling prereqs
+    for node_id, node in nodes.items():
+        for prereq in node.get("prereqs", []):
+            assert prereq in nodes, f"Dangling prereq {prereq} in {node_id}"
+
+    # Verify no cycles exist in adapted DAG
+    assert not has_cycle(nodes), "Adapted roadmap contains a cyclic dependency"
+
+
+def test_apply_diagnostic_assessment_high_score_no_remediation():
+    """Verify passing diagnostic assessment does not splice unnecessary nodes."""
+    base_roadmap = generate_fallback_roadmap("Become an AI & Machine Learning Engineer", {"weekly_hours": 15})
+    
+    adapted_rm, event = apply_diagnostic_assessment(
+        roadmap=base_roadmap,
+        skill_topic="Retrieval & Vector Search",
+        score=88,
+        profile={"weekly_hours": 15}
+    )
+
+    assert event is not None
+    assert event["adapted"] is False
+    nodes = {n["id"]: n for phase in adapted_rm["phases"] for n in phase["nodes"]}
+    assert len(nodes) == 6
+    assert "REM101" not in nodes

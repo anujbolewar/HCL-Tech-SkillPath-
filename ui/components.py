@@ -1,10 +1,15 @@
 """Presentation components for PathFinder AI with spatial discipline and clean typography."""
 
-from typing import Dict, Any, List, Set, Optional
+from typing import Dict, Any, List, Set, Optional, Tuple
 import streamlit as st
 
 from core.config import APP_TITLE, TEAM_NAME
-from engine.re_router import calculate_progress_stats, get_node_status, find_next_recommended_action
+from engine.re_router import (
+    calculate_progress_stats,
+    get_node_status,
+    find_next_recommended_action,
+    apply_diagnostic_assessment,
+)
 
 def clean_html(html_str: str) -> str:
     """Strips all leading and trailing whitespace from each line to prevent Markdown codeblock parsing."""
@@ -28,7 +33,7 @@ def render_app_header(role_title: str = "Personalized Curriculum") -> None:
 
 
 def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
-    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap diagnostic using atomic CSS Grid."""
+    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap diagnostic with horizontal progress bars."""
     known_skills = list(set(profile.get("skills") or []))
     
     # Collect all skills targeted across the roadmap
@@ -41,7 +46,7 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
 
     identified_gaps = [s for s in target_skills if s not in known_skills]
 
-    # Baseline rows
+    # Baseline rows with horizontal competency bars
     baseline_items = []
     if known_skills:
         for s in known_skills[:4]:
@@ -49,10 +54,10 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
             <div style="margin-bottom: 10px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
                     <span style="color:#F8FAFC; font-weight:500;">{s}</span>
-                    <span style="color:#34D399; font-weight:600; font-size:0.75rem;">Verified Mastered (85%)</span>
+                    <span style="color:#34D399; font-weight:600; font-size:0.75rem;">Verified Mastered (80%)</span>
                 </div>
                 <div style="background:#162035; border-radius:999px; height:6px; width:100%; overflow:hidden;">
-                    <div style="background:#10B981; width:85%; height:100%; border-radius:999px;"></div>
+                    <div style="background:#10B981; width:80%; height:100%; border-radius:999px;"></div>
                 </div>
             </div>
             """)
@@ -60,7 +65,7 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
     else:
         baseline_html = "<div style='color:#64748B; font-size:0.85rem; padding: 12px 0;'>No prior skills declared (Foundational beginner track).</div>"
 
-    # Gaps rows
+    # Gaps rows with target tracks
     gaps_items = []
     if identified_gaps:
         for s in identified_gaps[:4]:
@@ -95,7 +100,7 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 28px;">
             <div>
                 <div style="font-size:0.78rem; font-weight:700; color:#94A3B8; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
-                    Current Baseline
+                    Current Baseline Skills
                 </div>
                 {baseline_html}
             </div>
@@ -109,6 +114,86 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
     </div>
     """
     st.markdown(clean_html(card_html), unsafe_allow_html=True)
+
+
+def render_roadmap_updated_banner(adaptation_event: Dict[str, Any]) -> None:
+    """Renders the prominent 'ROADMAP UPDATED' dynamic banner showing DAG adaptation provenance."""
+    if not adaptation_event or not adaptation_event.get("adapted"):
+        return
+
+    skill = adaptation_event.get("skill_topic", "Retrieval & Vector Search")
+    score = adaptation_event.get("score", 42)
+    inserted = adaptation_event.get("inserted_nodes", [])
+    inserted_html = "".join([
+        f"• <strong>{n.get('id')}: {n.get('title')}</strong> ({n.get('duration', '1 week')})<br>"
+        for n in inserted
+    ])
+
+    banner_html = f"""
+    <div style="background:#0D1F2D; border:1px solid #0284C7; border-left:4px solid #38BDF8; border-radius:10px; padding:16px 20px; margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-family:'Outfit',sans-serif; font-size:1rem; font-weight:700; color:#38BDF8;">
+                ⚡ ROADMAP UPDATED (Adaptive Learning Loop)
+            </span>
+            <span class="status-tag status-active">Weakness Detected ({score}%)</span>
+        </div>
+        <div style="font-size:0.88rem; color:#E2E8F0; line-height:1.5; margin-bottom:10px;">
+            Your diagnostic assessment on <strong>{skill}</strong> identified a prerequisite gap. PathFinder automatically re-planned your curriculum to insert foundational remedial coursework before your final capstone project.
+        </div>
+        <div style="background:#080C14; border:1px solid #1E293B; border-radius:6px; padding:10px 14px; font-size:0.85rem; color:#94A3B8;">
+            <span style="color:#60A5FA; font-weight:600;">Dynamically Inserted Prerequisites:</span><br>
+            {inserted_html}
+            <em style="color:#64748B; font-size:0.78rem;">Prerequisite dependency graph updated. You can ask PathFinder Mentor: "Why did my roadmap change?".</em>
+        </div>
+    </div>
+    """
+    st.markdown(clean_html(banner_html), unsafe_allow_html=True)
+
+
+def render_diagnostic_assessment_widget(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
+    """Renders the interactive Diagnostic Assessment widget to test and prove the adaptive loop."""
+    from core.state import persist_state
+
+    with st.expander("🧪 **Take Skill Diagnostic Assessment (Adaptive Loop Demo)**", expanded=False):
+        st.markdown(
+            "Test your competencies in real-time. If a weakness is detected (< 70%), PathFinder's "
+            "adaptive re-router will dynamically splice prerequisite milestones into your learning graph."
+        )
+
+        c1, c2, c3 = st.columns([2, 1.5, 1.2], vertical_alignment="bottom")
+        with c1:
+            quiz_topic = st.selectbox(
+                "Assessment Skill Domain:",
+                ["Retrieval & Vector Search", "Model Evaluation & Metrics", "Deployment & Containerization"],
+                index=0
+            )
+        with c2:
+            simulated_score = st.select_slider(
+                "Simulated Test Score:",
+                options=[30, 42, 55, 68, 75, 88, 95],
+                value=42,
+                help="Scores under 70% trigger automatic curriculum remediation"
+            )
+        with c3:
+            btn_run_quiz = st.button("Run Assessment", type="primary", use_container_width=True)
+
+        if btn_run_quiz:
+            with st.spinner(f"Evaluating {quiz_topic} assessment and analyzing knowledge boundaries..."):
+                updated_roadmap, adapt_event = apply_diagnostic_assessment(
+                    roadmap=roadmap,
+                    skill_topic=quiz_topic,
+                    score=simulated_score,
+                    profile=profile
+                )
+                st.session_state.roadmap_data = updated_roadmap
+                if adapt_event:
+                    st.session_state.adaptation_event = adapt_event
+                    if adapt_event.get("adapted"):
+                        st.toast("Weakness Detected: Roadmap dynamically re-routed!", icon="⚡")
+                    else:
+                        st.toast("Assessment Passed: Learning path verified!", icon="✅")
+                persist_state()
+                st.rerun()
 
 
 def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:

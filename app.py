@@ -40,6 +40,7 @@ from engine.xai_scorer import compute_node_relevance
 from engine.re_router import (
     find_next_recommended_action,
     calculate_progress_stats,
+    apply_diagnostic_assessment,
 )
 from engine.groq_engine import generate_roadmap_with_groq, HAS_GROQ
 from engine.gemini_engine import generate_roadmap_with_gemini, HAS_GEMINI
@@ -52,6 +53,8 @@ from ui.components import (
     render_skill_gap_section,
     render_next_best_action_card,
     render_node_inspector,
+    render_roadmap_updated_banner,
+    render_diagnostic_assessment_widget,
     clean_html,
 )
 from ui.flow_visualizer import render_dag_flowchart
@@ -102,6 +105,7 @@ with st.sidebar:
             )
             st.session_state.completed_nodes = set(persona_data.get("completed_initial", []))
             st.session_state.selected_node_id = None
+            st.session_state.adaptation_event = None
             st.session_state._show_replan_banner = False
             persist_state()
             st.rerun()
@@ -213,6 +217,7 @@ def _execute_roadmap_generation(goal_text: str) -> None:
         st.session_state.roadmap_data = new_roadmap
         st.session_state.completed_nodes = set()
         st.session_state.selected_node_id = None
+        st.session_state.adaptation_event = None
         st.session_state._show_replan_banner = False
         persist_state()
         st.rerun()
@@ -260,52 +265,92 @@ if not st.session_state.roadmap_data:
     st.stop()
 
 # ==========================================
-# CORE PRODUCT STORY (FIRST VIEWPORT)
+# 3-TAB STREAMLINED ARCHITECTURE
 # ==========================================
 roadmap = st.session_state.roadmap_data
 
-# 1. Skill Gap Diagnostic Section ("Where I Am" vs "Where I Need To Be")
-render_skill_gap_section(roadmap, st.session_state.user_profile)
-
-# 2. Adaptive Replanning Indicator (when a milestone completion updates downstream state)
-if st.session_state.get("_show_replan_banner"):
-    last_title = st.session_state.get("_last_completed_title", "milestone")
-    banner_html = f"""
-    <div class="replan-banner">
-        <strong>⚡ ROADMAP ADAPTED:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
-    </div>
-    """
-    st.markdown(clean_html(banner_html), unsafe_allow_html=True)
-
-# 3. Prominent NEXT BEST ACTION Card
-render_next_best_action_card(roadmap, st.session_state.completed_nodes)
-
-# ==========================================
-# MAIN WORKSPACE: ROADMAP, MILESTONES & MENTOR
-# ==========================================
-tab_roadmap, tab_mentor_analytics = st.tabs([
-    "🗺️ Interactive Learning Roadmap",
-    "🤖 PathFinder Mentor & Competency Progress"
+tab_overview, tab_learning_path, tab_mentor = st.tabs([
+    "📊 Overview & Next Steps",
+    "🗺️ Learning Path & Milestones",
+    "🤖 PathFinder Mentor"
 ])
 
-with tab_roadmap:
-    # Top: Streamlit Flow React Flow DAG
+# ------------------------------------------
+# TAB 1: OVERVIEW & NEXT STEPS
+# ------------------------------------------
+with tab_overview:
+    # 1. Dynamic Adaptive Replanning Banner (when triggered by assessment or completion)
+    if st.session_state.get("adaptation_event"):
+        render_roadmap_updated_banner(st.session_state.adaptation_event)
+    elif st.session_state.get("_show_replan_banner"):
+        last_title = st.session_state.get("_last_completed_title", "milestone")
+        banner_html = f"""
+        <div class="replan-banner">
+            <strong>⚡ ROADMAP ADAPTED:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
+        </div>
+        """
+        st.markdown(clean_html(banner_html), unsafe_allow_html=True)
+
+    # 2. Skill Gap Diagnostic Section (Horizontal Competency Bars: Primary)
+    render_skill_gap_section(roadmap, st.session_state.user_profile)
+
+    # 3. Prominent NEXT BEST ACTION Card
+    render_next_best_action_card(roadmap, st.session_state.completed_nodes)
+
+    # 4. Interactive Diagnostic Assessment (Adaptive Loop Demo)
+    render_diagnostic_assessment_widget(roadmap, st.session_state.user_profile)
+
+    # 5. Compact Curriculum Progress Summary
+    stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)
+    st.markdown(f"""
+    <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:14px 20px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.88rem; color:#94A3B8;">
+            Curriculum Progress: <strong style="color:#F8FAFC;">{stats['completed_count']} / {stats['total_nodes']} Modules Mastered</strong> ({stats['progress_pct']}%)
+        </span>
+        <span style="font-size:0.82rem; color:#60A5FA;">
+            Switch to <strong>Learning Path</strong> tab to view interactive DAG canvas.
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ------------------------------------------
+# TAB 2: LEARNING PATH & MILESTONES
+# ------------------------------------------
+with tab_learning_path:
+    # Top: Streamlit Flow React Flow DAG with Side-by-Side Node Inspector
     render_dag_flowchart(roadmap, st.session_state.completed_nodes, st.session_state.user_profile)
     
     st.divider()
-    # Bottom: Detailed Actionable Milestones
+    # Bottom: Detailed Actionable Milestones & Projects
     render_recommendation_cards(roadmap, st.session_state.completed_nodes)
 
-with tab_mentor_analytics:
-    col_analytics, col_mentor = st.columns([1.1, 1.2], vertical_alignment="top")
+# ------------------------------------------
+# TAB 3: MENTOR & EXPORTS
+# ------------------------------------------
+with tab_mentor:
+    col_chat, col_side = st.columns([1.3, 1], vertical_alignment="top")
 
-    with col_analytics:
-        # Dynamic Skill Competency Polar Radar
-        render_dynamic_radar_chart(
+    with col_chat:
+        p_name = "Groq" if "Groq" in provider else ("Google Gemini" if "Gemini" in provider else "Offline")
+        render_ai_mentor_chat(
             roadmap=roadmap,
             profile=st.session_state.user_profile,
-            completed_nodes=st.session_state.completed_nodes
+            completed_nodes=st.session_state.completed_nodes,
+            provider=p_name,
+            model_name=active_model,
+            groq_api_key=groq_key_input,
+            gemini_api_key=gemini_key_input,
+            adaptation_event=st.session_state.get("adaptation_event")
         )
+
+    with col_side:
+        # Collapsible Radar Chart (Secondary Visualization)
+        with st.expander("📈 **Competency Radar Analysis**", expanded=False):
+            render_dynamic_radar_chart(
+                roadmap=roadmap,
+                profile=st.session_state.user_profile,
+                completed_nodes=st.session_state.completed_nodes
+            )
 
         st.markdown("#### Export Curriculum")
         stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)
@@ -335,15 +380,3 @@ with tab_mentor_analytics:
                 mime="text/html",
                 use_container_width=True
             )
-
-    with col_mentor:
-        p_name = "Groq" if "Groq" in provider else ("Google Gemini" if "Gemini" in provider else "Offline")
-        render_ai_mentor_chat(
-            roadmap=roadmap,
-            profile=st.session_state.user_profile,
-            completed_nodes=st.session_state.completed_nodes,
-            provider=p_name,
-            model_name=active_model,
-            groq_api_key=groq_key_input,
-            gemini_api_key=gemini_key_input
-        )

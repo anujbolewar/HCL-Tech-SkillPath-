@@ -6,6 +6,9 @@ from ui.components import (
     render_skill_gap_section,
     render_next_best_action_card,
     render_node_inspector,
+    render_roadmap_updated_banner,
+    render_diagnostic_assessment_widget,
+    clean_html,
 )
 from ui.flow_visualizer import render_dag_flowchart
 from ui.radar_chart import render_dynamic_radar_chart
@@ -27,10 +30,13 @@ __all__ = [
     "render_skill_gap_section",
     "render_next_best_action_card",
     "render_node_inspector",
+    "render_roadmap_updated_banner",
+    "render_diagnostic_assessment_widget",
     "render_dag_flowchart",
     "render_dynamic_radar_chart",
     "render_ai_mentor_chat",
     "render_recommendation_cards",
     "build_markdown_export",
     "build_printable_html_export",
+    "clean_html",
 ]

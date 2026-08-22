@@ -1,7 +1,7 @@
 """State persistence manager for PathFinder AI.
 
-Ensures user profile, roadmap data, completed milestone set, and chat history
-persist seamlessly across browser reruns and page refreshes.
+Ensures user profile, roadmap data, completed milestone set, chat history,
+and adaptive assessment events persist seamlessly across browser reruns and page refreshes.
 """
 
 import json
@@ -24,6 +24,7 @@ def persist_state() -> bool:
             "chat_history": st.session_state.get("chat_history", [])[-40:],
             "active_persona": st.session_state.get("active_persona", "Custom"),
             "selected_node_id": st.session_state.get("selected_node_id"),
+            "adaptation_event": st.session_state.get("adaptation_event"),
         }
         STATE_FILE.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         return True
@@ -48,6 +49,8 @@ def load_persisted_state() -> bool:
             st.session_state.chat_history = data["chat_history"]
         if "selected_node_id" in data:
             st.session_state.selected_node_id = data["selected_node_id"]
+        if "adaptation_event" in data:
+            st.session_state.adaptation_event = data["adaptation_event"]
         return True
     except Exception:
         return False
@@ -61,54 +64,36 @@ def clear_persisted_state() -> None:
         pass
 
 def initialize_session_state() -> None:
-    """Initialize all session_state keys with sensible defaults."""
-    if "user_profile" not in st.session_state:
+    """Initializes default session_state values if unassigned."""
+    if "initialized" not in st.session_state:
+        st.session_state.initialized = True
         st.session_state.user_profile = DEFAULT_PROFILE.copy()
-
-    if "_state_loaded" not in st.session_state:
-        st.session_state._state_loaded = True
+        st.session_state.roadmap_data = None
+        st.session_state.completed_nodes = set()
+        st.session_state.selected_node_id = None
+        st.session_state.adaptation_event = None
+        st.session_state._show_replan_banner = False
+        st.session_state._last_completed_title = ""
+        st.session_state.chat_history = [{
+            "role": "assistant",
+            "content": WELCOME_MESSAGE
+        }]
+        # Try loading previous session state if available
         load_persisted_state()
 
-    if "roadmap_data" not in st.session_state:
-        st.session_state.roadmap_data = None
-
-    if "completed_nodes" not in st.session_state:
-        st.session_state.completed_nodes = set()
-
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = [
-            {"role": "assistant", "content": WELCOME_MESSAGE}
-        ]
-
-    if "demo_mode" not in st.session_state:
-        st.session_state.demo_mode = False
-
-    if "_prev_demo" not in st.session_state:
-        st.session_state._prev_demo = False
-
-    if "selected_node_id" not in st.session_state:
-        st.session_state.selected_node_id = None
-
-    if "_pending_scratch" not in st.session_state:
-        st.session_state._pending_scratch = False
-
-    if "_pending_demo_off" not in st.session_state:
-        st.session_state._pending_demo_off = False
-
-    # Execute deferred resets
+    # Handle scratch wipe request
     if st.session_state.get("_pending_scratch"):
+        clear_persisted_state()
+        st.session_state.clear()
+        st.session_state.initialized = True
         st.session_state.user_profile = DEFAULT_PROFILE.copy()
         st.session_state.roadmap_data = None
         st.session_state.completed_nodes = set()
-        st.session_state.chat_history = [{"role": "assistant", "content": WELCOME_MESSAGE}]
-        st.session_state.demo_mode = False
-        st.session_state._prev_demo = False
-        st.session_state.goal_box = ""
         st.session_state.selected_node_id = None
-        st.session_state._pending_scratch = False
-        clear_persisted_state()
-
-    if st.session_state.get("_pending_demo_off"):
-        st.session_state.demo_mode = False
-        st.session_state._prev_demo = False
-        st.session_state._pending_demo_off = False
+        st.session_state.adaptation_event = None
+        st.session_state._show_replan_banner = False
+        st.session_state.chat_history = [{
+            "role": "assistant",
+            "content": WELCOME_MESSAGE
+        }]
+        persist_state()
