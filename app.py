@@ -1015,6 +1015,7 @@ with tab_xai:
             active_key = groq_key_input or os.environ.get("GROQ_API_KEY", "")
 
             if active_key and HAS_GROQ:
+                client = Groq(api_key=active_key)
                 try:
                     # Build full roadmap context so the mentor answers from REAL data
                     done = st.session_state.completed_nodes
