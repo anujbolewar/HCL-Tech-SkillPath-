@@ -48,15 +48,6 @@ CUSTOM_CSS = """
         padding-top: 1.5rem !important;
     }
 
-    /* Native Container Border Styling */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        background-color: #0F1626 !important;
-        border: 1px solid #1E293B !important;
-        border-radius: 10px !important;
-        padding: 6px 10px !important;
-        margin-bottom: 14px !important;
-    }
-
     /* Compact App Header (54px) */
     .app-header {
         display: flex;
@@ -233,24 +224,18 @@ CUSTOM_CSS = """
         background: #0F1626;
         border: 1px solid #1E293B;
         border-radius: 10px;
-        padding: 16px 20px;
-        margin-top: 14px;
-    }
-
-    /* Progress Bar Restyling */
-    div[data-testid="stProgress"] > div > div > div > div {
-        background-color: #3B82F6;
-        border-radius: 999px;
-    }
-    div[data-testid="stProgress"] > div > div {
-        background-color: #162035;
-        border-radius: 999px;
-        height: 6px !important;
+        padding: 16px 18px;
+        margin-top: 10px;
     }
 
     /* Input & Button Alignment Fixes */
-    div[data-testid="stTextInput"] {
-        margin-bottom: 0 !important;
+    div[data-testid="stTextInputRootElement"],
+    div[data-testid="stTextInput"] input {
+        height: 42px !important;
+        border-radius: 6px !important;
+        background-color: #0F1626 !important;
+        border-color: #1E293B !important;
+        color: #F8FAFC !important;
     }
 
     .stButton > button {
@@ -261,6 +246,7 @@ CUSTOM_CSS = """
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        margin-top: 0 !important;
     }
 
     .stButton > button[kind="primary"] {

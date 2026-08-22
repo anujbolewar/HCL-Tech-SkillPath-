@@ -23,7 +23,7 @@ def render_dag_flowchart(
     completed_nodes: Set[str],
     profile: Dict[str, Any]
 ) -> None:
-    """Renders the interactive React Flow DAG canvas and node inspector."""
+    """Renders the interactive React Flow DAG canvas with side-by-side node inspector."""
     all_nodes_dict: Dict[str, Dict[str, Any]] = {}
     node_phase_map: Dict[str, int] = {}
     
@@ -49,6 +49,8 @@ def render_dag_flowchart(
     </div>
     """, unsafe_allow_html=True)
 
+    flow_col, side_ctrl = st.columns([2.4, 1.1], vertical_alignment="top")
+
     if HAS_STREAMLIT_FLOW:
         flow_nodes = []
         flow_edges = []
@@ -58,8 +60,8 @@ def render_dag_flowchart(
                 node_id = node["id"]
                 status = get_node_status(node, completed_nodes)
                 
-                pos_x = phase_idx * 290
-                pos_y = node_idx * 130 - 20
+                pos_x = phase_idx * 260
+                pos_y = node_idx * 120 - 20
 
                 if status == "completed":
                     label = f"✓ {node_id}: {node['title']}\n{node.get('duration', '2w')} [Completed]"
@@ -91,24 +93,6 @@ def render_dag_flowchart(
 
         flow_state = StreamlitFlowState(flow_nodes, flow_edges)
 
-        flow_col, side_ctrl = st.columns([3.5, 1], vertical_alignment="top")
-        with side_ctrl:
-            node_options = ["None (Click node or select)"] + list(all_nodes_dict.keys())
-            curr_idx = 0
-            if selected_node_id in all_nodes_dict:
-                curr_idx = node_options.index(selected_node_id)
-            
-            picked = st.selectbox(
-                "Inspect Node:",
-                node_options,
-                index=curr_idx,
-                label_visibility="collapsed",
-                help="Inspect why PathFinder recommended this milestone."
-            )
-            if picked != "None (Click node or select)":
-                selected_node_id = picked
-                st.session_state.selected_node_id = picked
-
         with flow_col:
             event = streamlit_flow(
                 key="learning_path_flow",
@@ -126,42 +110,77 @@ def render_dag_flowchart(
             selected_node_id = event.selected_id
             st.session_state.selected_node_id = event.selected_id
 
+        with side_ctrl:
+            st.markdown("<div style='font-size:0.82rem; font-weight:700; color:#94A3B8; text-transform:uppercase; margin-bottom:4px;'>Inspect Milestone:</div>", unsafe_allow_html=True)
+            node_options = ["None (Select or click)"] + list(all_nodes_dict.keys())
+            curr_idx = 0
+            if selected_node_id in all_nodes_dict:
+                curr_idx = node_options.index(selected_node_id)
+            
+            picked = st.selectbox(
+                "Choose Node:",
+                node_options,
+                index=curr_idx,
+                label_visibility="collapsed",
+                help="Inspect why PathFinder recommended this milestone."
+            )
+            if picked != "None (Select or click)":
+                selected_node_id = picked
+                st.session_state.selected_node_id = picked
+
+            # Render inspector inside side_ctrl
+            if selected_node_id and selected_node_id in all_nodes_dict:
+                node_obj = all_nodes_dict[selected_node_id]
+                p_idx = node_phase_map.get(selected_node_id, 0)
+                score, breakdown = compute_node_relevance(
+                    node_obj, profile, completed_nodes, p_idx, total_phases
+                )
+                render_node_inspector(node_obj, score, breakdown)
+            else:
+                st.markdown("""
+                <div class="node-inspector-box" style="color:#94A3B8; font-size:0.85rem; line-height:1.5;">
+                    💡 <strong>Node Inspector</strong><br>
+                    Click any node on the roadmap canvas or choose from the dropdown to view its prerequisite chain, provider, and Explainable AI match score.
+                </div>
+                """, unsafe_allow_html=True)
+
     else:
         # Graphviz fallback
-        dot = graphviz.Digraph(comment="Learning Path DAG", graph_attr={"rankdir": "LR", "bgcolor": "transparent"})
-        dot.attr("node", shape="box", style="filled,rounded", fontname="Inter", fontsize="10")
+        with flow_col:
+            dot = graphviz.Digraph(comment="Learning Path DAG", graph_attr={"rankdir": "LR", "bgcolor": "transparent"})
+            dot.attr("node", shape="box", style="filled,rounded", fontname="Inter", fontsize="10")
 
-        for phase_idx, phase in enumerate(roadmap.get("phases", [])):
-            with dot.subgraph(name=f"cluster_{phase_idx}") as c:
-                c.attr(label=phase.get("phase", ""), color="#334155", style="dashed", fontcolor="#94A3B8")
-                for node in phase.get("nodes", []):
-                    status = get_node_status(node, completed_nodes)
-                    if status == "completed":
-                        bg_color, text_color, border_color, tag = "#064E3B", "#FFFFFF", "#059669", "✓"
-                    elif status == "ready":
-                        bg_color, text_color, border_color, tag = "#1E293B", "#F8FAFC", "#3B82F6", "▶"
-                    else:
-                        bg_color, text_color, border_color, tag = "#0F1626", "#64748B", "#334155", "🔒"
+            for phase_idx, phase in enumerate(roadmap.get("phases", [])):
+                with dot.subgraph(name=f"cluster_{phase_idx}") as c:
+                    c.attr(label=phase.get("phase", ""), color="#334155", style="dashed", fontcolor="#94A3B8")
+                    for node in phase.get("nodes", []):
+                        status = get_node_status(node, completed_nodes)
+                        if status == "completed":
+                            bg_color, text_color, border_color, tag = "#064E3B", "#FFFFFF", "#059669", "✓"
+                        elif status == "ready":
+                            bg_color, text_color, border_color, tag = "#1E293B", "#F8FAFC", "#3B82F6", "▶"
+                        else:
+                            bg_color, text_color, border_color, tag = "#0F1626", "#64748B", "#334155", "🔒"
 
-                    label_text = f"{tag} {node['id']}: {node['title']}\\n{node.get('duration', '')}"
-                    c.node(node["id"], label=label_text, fillcolor=bg_color, fontcolor=text_color, color=border_color, penwidth="1.5")
+                        label_text = f"{tag} {node['id']}: {node['title']}\\n{node.get('duration', '')}"
+                        c.node(node["id"], label=label_text, fillcolor=bg_color, fontcolor=text_color, color=border_color, penwidth="1.5")
 
-                    for prereq in node.get("prereqs", []):
-                        dot.edge(prereq, node["id"], color="#3B82F6", penwidth="1.2")
+                        for prereq in node.get("prereqs", []):
+                            dot.edge(prereq, node["id"], color="#3B82F6", penwidth="1.2")
 
-        st.graphviz_chart(dot, width="stretch")
+            st.graphviz_chart(dot, width="stretch")
 
-        node_options = ["None (Select node)"] + list(all_nodes_dict.keys())
-        picked = st.selectbox("Inspect Node:", node_options, index=0)
-        if picked != "None (Select node)":
-            selected_node_id = picked
-            st.session_state.selected_node_id = picked
-
-    # Node Inspector
-    if selected_node_id and selected_node_id in all_nodes_dict:
-        node_obj = all_nodes_dict[selected_node_id]
-        p_idx = node_phase_map.get(selected_node_id, 0)
-        score, breakdown = compute_node_relevance(
-            node_obj, profile, completed_nodes, p_idx, total_phases
-        )
-        render_node_inspector(node_obj, score, breakdown)
+        with side_ctrl:
+            node_options = ["None (Select node)"] + list(all_nodes_dict.keys())
+            picked = st.selectbox("Inspect Node:", node_options, index=0)
+            if picked != "None (Select node)":
+                selected_node_id = picked
+                st.session_state.selected_node_id = picked
+            
+            if selected_node_id and selected_node_id in all_nodes_dict:
+                node_obj = all_nodes_dict[selected_node_id]
+                p_idx = node_phase_map.get(selected_node_id, 0)
+                score, breakdown = compute_node_relevance(
+                    node_obj, profile, completed_nodes, p_idx, total_phases
+                )
+                render_node_inspector(node_obj, score, breakdown)
