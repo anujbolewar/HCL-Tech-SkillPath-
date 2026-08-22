@@ -1066,13 +1066,19 @@ with tab_xai:
     
     with col_xai_left:
         st.markdown("### 🔍 Rationale Transparency Ledger")
-        for phase in roadmap["phases"]:
+        total_phases = len(roadmap["phases"])
+        for phase_idx, phase in enumerate(roadmap["phases"]):
             for node in phase["nodes"]:
-                with st.expander(f"Why {node['id']}: {node['title']}?", expanded=False):
-                    st.markdown(f"**Target Skill Gap:** Replaces deficiency in *{', '.join(node['skills'])}*")
-                    st.markdown(f"**Prerequisite Rationale:** {node['why']}")
+                score, breakdown = compute_node_relevance(
+                    node, st.session_state.user_profile,
+                    st.session_state.completed_nodes, phase_idx, total_phases)
+                with st.expander(f"Why {node['id']}: {node['title']}? ({score}% relevant)", expanded=False):
+                    st.markdown(f"**Target Skill Gap:** Replaces deficiency in *{', '.join(node.get('skills') or ['—'])}*")
+                    st.markdown(f"**Prerequisite Rationale:** {node.get('why', 'Core milestone on your learning path.')}")
                     st.markdown(f"**Goal Alignment:** Supports your learning focus as **{roadmap['role']}**")
-                    st.progress(0.95, text="Relevance Confidence Score: 95%")
+                    st.progress(score / 100, text=f"Relevance Score: {score}/100")
+                    for line in breakdown:
+                        st.caption(f"• {line}")
     
     with col_xai_right:
         st.markdown("### 🤖 AI Mentor — knows your roadmap")
