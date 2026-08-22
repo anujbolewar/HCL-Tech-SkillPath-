@@ -707,6 +707,34 @@ def compute_node_relevance(node: dict, profile: dict, completed_nodes: set, phas
     score = min(100, round(f_gap + f_prereq + f_fit))
     return score, breakdown
 
+def build_markdown_export(roadmap: dict, completed_nodes: set, progress_pct: int) -> str:
+    """Full human-readable roadmap: summary, per-phase module table, checklist."""
+    all_nodes = [n for p in roadmap["phases"] for n in p["nodes"]]
+    done = len(completed_nodes)
+    lines = [
+        f"# Learning Path: {roadmap['role']}",
+        f"**Goal:** {roadmap['goal']}  ",
+        f"**Progress:** {progress_pct}% ({done}/{len(all_nodes)} milestones)",
+        "",
+    ]
+    for phase in roadmap["phases"]:
+        lines += [f"## {phase['phase']}", "",
+                  "| ID | Module | Type | Provider | Duration | Status |",
+                  "|----|--------|------|----------|----------|--------|"]
+        for n in phase["nodes"]:
+            status = "✅ Done" if n["id"] in completed_nodes else "⬜ Pending"
+            title = str(n.get("title", "")).replace("|", "\\|")
+            provider = str(n.get("provider", "")).replace("|", "\\|")
+            lines.append(f"| {n['id']} | {title} | {n.get('type', '')} | {provider} | "
+                         f"{n.get('duration', '')} | {status} |")
+        lines.append("")
+    lines += ["## Checklist", ""]
+    for phase in roadmap["phases"]:
+        for n in phase["nodes"]:
+            mark = "x" if n["id"] in completed_nodes else " "
+            lines.append(f"- [{mark}] **{n['id']}** — {n.get('title', '')}")
+    return "\n".join(lines) + "\n"
+
 # ==========================================
 # SIDEBAR: PILLAR 2 & GROQ CONFIGURATION
 # ==========================================
@@ -1288,8 +1316,8 @@ with tab_dash:
             )
         with c_exp2:
             st.download_button(
-                "📄 Export Markdown Summary",
-                data=f"# Learning Path: {roadmap['role']}\nGoal: {roadmap['goal']}\nProgress: {progress_pct}%",
+                "📄 Export Markdown Roadmap",
+                data=build_markdown_export(roadmap, st.session_state.completed_nodes, progress_pct),
                 file_name="learning_path.md",
                 mime="text/markdown",
                 width="stretch"
