@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PathFinder AI — Pitch Deck | Team Cortex</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #09090b;
+            color: #fafafa;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            padding: 18px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #27272a;
+            background: #101014;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .team-pill {
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            color: #d4d4d8;
+        }
+
+        /* Slide Canvas */
+        .deck-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px 48px;
+            position: relative;
+        }
+
+        .slide {
+            display: none;
+            width: 100%;
+            max-width: 1100px;
+            background: #111114;
+            border: 1px solid #27272a;
+            border-radius: 16px;
+            padding: 42px 52px;
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.7);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .slide.active {
+            display: block;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2, h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 14px;
+            color: #f4f4f5;
+        }
+
+        .slide-tag {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #60a5fa;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .lead-text {
+            font-size: 1.05rem;
+            color: #a1a1aa;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 18px;
+        }
+
+        .card {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card h4 {
+            font-size: 1.05rem;
+            color: #93c5fd;
+            margin-bottom: 8px;
+        }
+
+        .card p, .card ul {
+            font-size: 0.9rem;
+            color: #d4d4d8;
+            line-height: 1.5;
+        }
+
+        .card ul {
+            padding-left: 18px;
+        }
+
+        .highlight-stat {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #34d399;
+            margin-bottom: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        /* Controls Bottom Bar */
+        footer {
+            padding: 16px 36px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #27272a;
+            background: #101014;
+        }
+
+        .btn-nav {
+            background: #27272a;
+            color: #fafafa;
+            border: 1px solid #3f3f46;
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .btn-nav:hover {
+            background: #3f3f46;
+        }
+
+        .btn-nav.primary {
+            background: #2563eb;
+            border-color: #3b82f6;
+        }
+
+        .btn-nav.primary:hover {
+            background: #1d4ed8;
+        }
+
+        .slide-counter {
+            font-size: 0.85rem;
+            color: #a1a1aa;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-text">SkillPath AI (PathFinder)</div>
+        <div class="team-pill">Team Cortex • HCL Tech Hackathon Round 2</div>
+    </header>
+
+    <div class="deck-container">
+        
+        <!-- Slide 1 -->
+        <div class="slide active" id="slide-1">
+            <div class="slide-tag">Pitch Deck • Slide 1 of 10</div>
+            <h2 style="font-size:2.5rem; background:linear-gradient(90deg, #fafafa, #93c5fd); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">
+                PathFinder AI
+            </h2>
+            <div class="lead-text" style="font-size:1.25rem; color:#e4e4e7;">
+                AI-Powered Personalized Learning Path Recommender
+            </div>
+            <div class="card" style="margin-top:20px; background:#131317; border-color:#3b82f6;">
+                <h4 style="color:#60a5fa;">Team Cortex (Yeshwantrao Chavan College of Engineering)</h4>
+                <p style="margin-top:6px;">
+                    <strong>Anuj Bolewar</strong> (Lead Architect) • <strong>Lakshya Gupta</strong> (Full-Stack Systems) • <strong>Shaki Gajbhiye</strong> (AI/ML)<br>
+                    <strong>Pranjal Gudadhe</strong> (UX & Frontend) • <strong>Om Ingle</strong> (Evaluation Specialist)
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="slide" id="slide-2">
+            <div class="slide-tag">The Problem • Slide 2 of 10</div>
+            <h2>Why 90%+ of Self-Directed Learners Drop Out</h2>
+            <div class="lead-text">Online platforms offer infinite courses, but learners suffer from severe Curriculum Fragmentation.</div>
+            <div class="grid-3">
+                <div class="card">
+                    <div class="highlight-stat">92%</div>
+                    <h4>Drop-out Rate</h4>
+                    <p>Learners abandon courses due to cognitive overload and missing prerequisites.</p>
+                </div>
+                <div class="card">
+                    <div class="highlight-stat">0%</div>
+                    <h4>Prerequisite Logic</h4>
+                    <p>Current recommenders suggest isolated single courses without a structured path.</p>
+                </div>
+                <div class="card">
+                    <div class="highlight-stat">100%</div>
+                    <h4>Black-Box Advice</h4>
+                    <p>Learners are never shown why a course was picked or how it bridges their specific skill gaps.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="slide" id="slide-3">
+            <div class="slide-tag">The Solution • Slide 3 of 10</div>
+            <h2>PathFinder AI: Any Goal. One Clear Path.</h2>
+            <div class="lead-text">An intelligent curriculum architect that transforms natural language goals into interactive Directed Acyclic Graph (DAG) roadmaps.</div>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🎯 Personalized Pacing</h4>
+                    <p>Dynamically scales module durations to match exact weekly hours (5h, 15h, 30h/week).</p>
+                </div>
+                <div class="card">
+                    <h4>🔀 Topological DAG Structure</h4>
+                    <p>Guarantees zero circular dependencies. Unlocks downstream milestones as prerequisites are completed.</p>
+                </div>
+                <div class="card">
+                    <h4>💡 Explainable AI (XAI)</h4>
+                    <p>Deterministic 3-factor relevance scoring (/100) justifying every milestone recommendation.</p>
+                </div>
+                <div class="card">
+                    <h4>🤖 Word-by-Word AI Mentor</h4>
+                    <p>Grounded in the learner's active roadmap, delivering contextual tutoring and weekly scheduling.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="slide" id="slide-4">
+            <div class="slide-tag">System Architecture • Slide 4 of 10</div>
+            <h2>The 6-Pillar Framework</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h4>Pillar 1 & 2: Intake & Profiling</h4>
+                    <p>Natural language goal intake + multi-attribute profiling (experience, hours, mastered skills).</p>
+                </div>
+                <div class="card">
+                    <h4>Pillar 3 & 4: Recs & DAG Flow</h4>
+                    <p>Interactive 2D React Flow canvas with node click inspection and top-tier open providers.</p>
+                </div>
+                <div class="card">
+                    <h4>Pillar 5 & 6: XAI & Dashboard</h4>
+                    <p>Transparent rationale ledger, streaming mentor, dynamic polar radar chart & 3 export formats.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="slide" id="slide-5">
+            <div class="slide-tag">AI/ML Deep Tech • Slide 5 of 10</div>
+            <h2>Multi-Model Routing & Deterministic XAI</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>⚡ Multi-Model LLM Engine</h4>
+                    <ul>
+                        <li><strong>Groq Cloud:</strong> Llama 3.3 70B for deep DAG generation & Llama 3.1 8B for fast chat.</li>
+                        <li><strong>Google Gemini:</strong> Gemini 2.5 Flash / Pro integration.</li>
+                        <li><strong>Smart Offline Engine:</strong> Instant domain templates for 100% offline uptime.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🔍 Transparent XAI Formula</h4>
+                    <p><strong>Score = SkillGap (40%) + PrereqReadiness (30%) + ExperienceFit (30%)</strong></p>
+                    <p style="margin-top:8px; font-size:0.85rem; color:#9ca3af;">Provides clear, audit-proof pedagogical rationales for students and educators.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 6 -->
+        <div class="slide" id="slide-6">
+            <div class="slide-tag">User Experience • Slide 6 of 10</div>
+            <h2>Interactive React Flow DAG with "Why" Inspection</h2>
+            <div class="lead-text">Interactive canvas with drag, pan, zoom, and live state transitions.</div>
+            <div class="grid-3">
+                <div class="card">
+                    <h4>✓ Completed</h4>
+                    <p>Glowing emerald nodes showing verified mastered milestones.</p>
+                </div>
+                <div class="card">
+                    <h4>▶ Ready / Unblocked</h4>
+                    <p>Animated cyan edges showing next executable action checkpoints.</p>
+                </div>
+                <div class="card">
+                    <h4>🔒 Locked</h4>
+                    <p>Muted nodes displaying exact prerequisite requirements to unlock.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 7 -->
+        <div class="slide" id="slide-7">
+            <div class="slide-tag">Analytics • Slide 7 of 10</div>
+            <h2>Dynamic Skill Competency Radar Chart</h2>
+            <div class="lead-text">Plotly Polar Radar Chart re-renders in real-time across 6 core domain dimensions.</div>
+            <div class="card">
+                <h4>Continuous Growth Visualization</h4>
+                <p>Compares <strong>Baseline Profile</strong> against <strong>Current Competency</strong> dynamically as milestones are completed, giving learners tangible proof of progress.</p>
+            </div>
+        </div>
+
+        <!-- Slide 8 -->
+        <div class="slide" id="slide-8">
+            <div class="slide-tag">Exports • Slide 8 of 10</div>
+            <h2>Multi-Format Export Pipeline</h2>
+            <div class="grid-3">
+                <div class="card">
+                    <h4>📄 Markdown</h4>
+                    <p>Clean checklists and tables formatted for GitHub repositories and Notion workspaces.</p>
+                </div>
+                <div class="card">
+                    <h4>📥 JSON Schema</h4>
+                    <p>Validated structured schema ready for enterprise LMS integration.</p>
+                </div>
+                <div class="card">
+                    <h4>🖨️ Printable HTML/PDF</h4>
+                    <p>Print-ready executive summary for mentor evaluation and offline study.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9 -->
+        <div class="slide" id="slide-9">
+            <div class="slide-tag">Enterprise Value • Slide 9 of 10</div>
+            <h2>Impact & Enterprise Scalability (HCL Tech)</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🏢 Enterprise Workforce Reskilling</h4>
+                    <p>Automate role transition pathways for employees transitioning into AI, Cloud, and Cybersecurity roles.</p>
+                </div>
+                <div class="card">
+                    <h4>🎓 Higher Ed & Universities</h4>
+                    <p>Guidance counseling tool helping students build individualized degree and certification roadmaps.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 10 -->
+        <div class="slide" id="slide-10">
+            <div class="slide-tag">Conclusion • Slide 10 of 10</div>
+            <h2>Why Team Cortex PathFinder Prototype Wins</h2>
+            <div class="grid-2">
+                <div class="card">
+                    <h4>🏆 Flawless Execution</h4>
+                    <ul>
+                        <li>All 5 Hackathon deliverables complete.</li>
+                        <li>16 automated unit & DAG integrity tests passing (100%).</li>
+                        <li>Persistent state across browser refresh.</li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h4>🚀 Next Steps</h4>
+                    <ul>
+                        <li>Live Pitch Day demonstration for HCL Tech panel.</li>
+                        <li>Integration with enterprise SSO and corporate LMS.</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top:24px; text-align:center;">
+                <h3 style="color:#60a5fa;">Thank You! Ready for Live Demo & Q&A.</h3>
+            </div>
+        </div>
+
+    </div>
+
+    <footer>
+        <button class="btn-nav" id="btn-prev" onclick="prevSlide()">← Previous</button>
+        <div class="slide-counter" id="counter">Slide 1 of 10</div>
+        <button class="btn-nav primary" id="btn-next" onclick="nextSlide()">Next →</button>
+    </footer>
+
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 10;
+
+        function showSlide(n) {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            const target = document.getElementById(`slide-${n}`);
+            if (target) {
+                target.classList.add('active');
+                currentSlide = n;
+                document.getElementById('counter').innerText = `Slide ${currentSlide} of ${totalSlides}`;
+            }
+            document.getElementById('btn-prev').disabled = (currentSlide === 1);
+            document.getElementById('btn-next').innerText = (currentSlide === totalSlides) ? "Restart ↺" : "Next →";
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            } else {
+                showSlide(1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+    </script>
+</body>
+</html>

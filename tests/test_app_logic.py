@@ -1,29 +1,26 @@
-"""Unit tests for SkillPath AI core logic.
+"""Unit tests for SkillPath AI core logic."""
 
-app.py is a Streamlit script (executes UI code on import), so we extract
-the pure functions we need via the AST instead of importing the module.
-"""
 import ast
 from pathlib import Path
-
 import pytest
 
-APP = Path(__file__).resolve().parent.parent / "app.py"
+# Try direct modular imports first, fallback to AST extraction if needed
+try:
+    from engine.fallback_data import generate_fallback_roadmap
+    from engine.xai_scorer import compute_node_relevance
+except ImportError:
+    APP = Path(__file__).resolve().parent.parent / "app.py"
+    def _extract(name):
+        tree = ast.parse(APP.read_text(encoding="utf-8"))
+        fn = next((n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name), None)
+        if fn is None:
+            return None
+        ns = {}
+        exec(compile(ast.Module(body=[fn], type_ignores=[]), str(APP), "exec"), ns)
+        return ns[name]
 
-
-def _extract(name):
-    """Return the named function from app.py, or None if not defined there."""
-    tree = ast.parse(APP.read_text(encoding="utf-8"))
-    fn = next((n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == name), None)
-    if fn is None:
-        return None
-    ns = {}
-    exec(compile(ast.Module(body=[fn], type_ignores=[]), str(APP), "exec"), ns)
-    return ns[name]
-
-
-generate_fallback_roadmap = _extract("generate_fallback_roadmap")
-compute_node_relevance = _extract("compute_node_relevance")
+    generate_fallback_roadmap = _extract("generate_fallback_roadmap")
+    compute_node_relevance = _extract("compute_node_relevance")
 
 needs_scorer = pytest.mark.skipif(
     compute_node_relevance is None, reason="scorer lands with the XAI feature branch"
@@ -35,7 +32,6 @@ PROFILE = {
     "skills": ["Python", "Basic Math", "SQL"],
     "weekly_hours": 10,
 }
-
 
 # ---------- fallback roadmap engine ----------
 
@@ -52,7 +48,7 @@ def test_unknown_goal_gets_universal_scaffold():
 
 
 def test_roadmap_structure_is_valid_dag():
-    for goal in ("data scientist", "web developer", "learn cooking"):
+    for goal in ("data scientist", "web developer", "guitar"):
         rm = generate_fallback_roadmap(goal, PROFILE)
         nodes = {n["id"] for p in rm["phases"] for n in p["nodes"]}
         assert len(nodes) == 6, f"{goal}: expected 6 nodes"

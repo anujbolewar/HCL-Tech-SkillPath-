@@ -4,3 +4,5 @@ __pycache__/
 .env
 .streamlit/secrets.toml
 .skillpath_state.json
+.pytest_cache/
+submission.zip
