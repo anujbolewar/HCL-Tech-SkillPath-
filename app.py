@@ -1072,7 +1072,8 @@ RULES:
 4. Keep replies under 150 words, friendly and actionable.
 5. Off-topic questions: answer briefly, then steer back to their learning goal."""
                     messages = [{"role": "system", "content": system_prompt}]
-                    messages.extend(st.session_state.chat_history)
+                    # Cap context window: last 20 turns keeps tokens bounded
+                    messages.extend(st.session_state.chat_history[-20:])
 
                     response = client.chat.completions.create(
                         messages=messages,
@@ -1114,6 +1115,8 @@ RULES:
                         reply = f"All modules done 🎉 For **{user_prompt.strip()}**, generate a fresh goal to keep the momentum going."
             
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
+            # Keep stored history bounded too (welcome msg + last 39 turns)
+            st.session_state.chat_history = st.session_state.chat_history[-40:]
             st.rerun()
 
 # ------------------------------------------
