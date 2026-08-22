@@ -1,4 +1,4 @@
-"""Dynamic Skill Competency Radar Chart component."""
+"""Dynamic Skill Competency Radar Chart component styled for light mode."""
 
 from collections import Counter
 from typing import Dict, Any, Set, List
@@ -10,8 +10,8 @@ def render_dynamic_radar_chart(
     profile: Dict[str, Any],
     completed_nodes: Set[str]
 ) -> None:
-    """Renders dynamic Polar Radar Chart reflecting real-time skill acquisition."""
-    st.markdown("### Skill Competency Radar")
+    """Renders dynamic Polar Radar Chart reflecting real-time skill acquisition in clean light mode."""
+    st.markdown("### Competency Radar Analysis")
     st.caption("Real-time competency tracking across 6 core skill dimensions derived from your active curriculum.")
 
     # Extract all skills from this roadmap
@@ -65,8 +65,8 @@ def render_dynamic_radar_chart(
         theta=theta_loop,
         fill="toself",
         name="Baseline Profile",
-        line_color="#64748b",
-        fillcolor="rgba(100, 116, 139, 0.12)",
+        line_color="#8A8A8A",
+        fillcolor="rgba(138, 138, 138, 0.08)",
         line=dict(width=1.5, dash="dot")
     ))
 
@@ -75,8 +75,8 @@ def render_dynamic_radar_chart(
         theta=theta_loop,
         fill="toself",
         name="Current Competency",
-        line_color="#6366f1",
-        fillcolor="rgba(99, 102, 241, 0.25)",
+        line_color="#2563EB",
+        fillcolor="rgba(37, 99, 235, 0.15)",
         line=dict(width=2.5)
     ))
 
@@ -85,30 +85,30 @@ def render_dynamic_radar_chart(
             radialaxis=dict(
                 visible=True,
                 range=[0, 100],
-                tickfont=dict(color="#64748b", size=9),
-                gridcolor="rgba(255, 255, 255, 0.07)",
-                linecolor="rgba(255, 255, 255, 0.07)"
+                tickfont=dict(color="#8A8A8A", size=9),
+                gridcolor="#E5E5E2",
+                linecolor="#E5E5E2"
             ),
             angularaxis=dict(
-                tickfont=dict(color="#e2e8f0", size=11, family="Outfit"),
-                gridcolor="rgba(255, 255, 255, 0.07)",
-                linecolor="rgba(255, 255, 255, 0.07)"
+                tickfont=dict(color="#171717", size=11, family="Inter"),
+                gridcolor="#E5E5E2",
+                linecolor="#E5E5E2"
             ),
-            bgcolor="rgba(0,0,0,0)"
+            bgcolor="#FFFFFF"
         ),
+        paper_bgcolor="#FFFFFF",
+        plot_bgcolor="#FFFFFF",
         showlegend=True,
         legend=dict(
             orientation="h",
             yanchor="bottom",
-            y=-0.22,
+            y=-0.2,
             xanchor="center",
             x=0.5,
-            font=dict(color="#94a3b8", size=11)
+            font=dict(color="#171717", size=11)
         ),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        margin=dict(l=30, r=30, t=20, b=45),
-        height=360
+        margin=dict(l=30, r=30, t=20, b=30),
+        height=280
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})

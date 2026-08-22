@@ -1,7 +1,7 @@
 """PathFinder AI — AI-Powered Personalized Learning Path Recommender.
 
 Developed by Team Cortex for HCL Tech Hackathon (Round 2).
-Streamlined, human-crafted educational platform prioritizing the core learner journey:
+Restrained, editorial light-mode learning platform prioritizing the core learner journey:
 GOAL → CURRENT SKILLS → SKILL GAPS → ROADMAP → NEXT BEST ACTION → ADAPTIVE REPLANNING.
 """
 
@@ -80,10 +80,10 @@ inject_custom_styles()
 initialize_session_state()
 
 # ==========================================
-# SIDEBAR: LEARNER WORKSPACE & SETTINGS
+# SIDEBAR: CLEAN LEARNER PANEL
 # ==========================================
 with st.sidebar:
-    st.markdown("### 🎓 **PathFinder Workspace**")
+    st.markdown("### PathFinder Workspace")
     st.caption("AI-Powered Curriculum Architect")
 
     # Evaluation Mode & Persona Presets
@@ -110,9 +110,20 @@ with st.sidebar:
             persist_state()
             st.rerun()
 
-    # Learner Profile Section
     st.divider()
-    st.markdown("#### Learner Profile")
+
+    # Learner Profile Summary in Sidebar
+    active_role = st.session_state.user_profile.get("target_role", "AI & ML Engineer")
+    active_level = st.session_state.user_profile.get("experience_level", "Intermediate")
+    active_hours = st.session_state.user_profile.get("weekly_hours", 15)
+
+    st.markdown(f"""
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:#8A8A8A; letter-spacing:0.04em; margin-bottom:4px;">Your Learning Goal</div>
+    <div style="font-size:14px; font-weight:600; color:#171717; margin-bottom:12px;">{active_role}</div>
+    <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:#8A8A8A; letter-spacing:0.04em; margin-bottom:4px;">Profile</div>
+    <div style="font-size:13px; color:#666666; margin-bottom:12px;">{active_level} · {active_hours} hrs/week</div>
+    """, unsafe_allow_html=True)
+
     with st.expander("Edit Background & Pace", expanded=False):
         exp_input = st.select_slider(
             "Experience Level",
@@ -140,11 +151,11 @@ with st.sidebar:
             "skills": known_skills_input
         })
 
-    # Collapsed Developer Settings (API Keys)
+    # Collapsed Developer & Engine Settings
     st.divider()
-    with st.expander("⚙️ Developer Settings", expanded=False):
+    with st.expander("Settings & Engine", expanded=False):
         provider = st.radio(
-            "Inference Provider",
+            "Inference Engine",
             ["Smart Offline (Default)", "Groq Cloud (Llama 3.3)", "Google Gemini"],
             index=0
         )
@@ -168,7 +179,7 @@ with st.sidebar:
             active_model = selected_model_key
             if groq_key_input:
                 os.environ["GROQ_API_KEY"] = groq_key_input
-                st.caption("✅ Groq Active")
+                st.caption("Connected to Groq")
 
         elif provider == "Google Gemini":
             gemini_key_input = st.text_input(
@@ -185,11 +196,11 @@ with st.sidebar:
             active_model = selected_gemini_key
             if gemini_key_input:
                 os.environ["GEMINI_API_KEY"] = gemini_key_input
-                st.caption("✅ Gemini Active")
+                st.caption("Connected to Gemini")
         else:
             st.caption("Using offline topological knowledge graphs.")
 
-    # Reset
+    # Reset Action
     st.divider()
     if st.button("Start Fresh", use_container_width=True):
         st.session_state._pending_scratch = True
@@ -204,7 +215,7 @@ render_app_header(role_title)
 
 def _execute_roadmap_generation(goal_text: str) -> None:
     """Executes roadmap generation pipeline with validation and state update."""
-    with st.spinner("Assessing skills, mapping gaps, and synthesizing DAG curriculum..."):
+    with st.spinner("Assessing skills, mapping gaps, and synthesizing learning path..."):
         p_name = "Groq" if "Groq" in provider else ("Google Gemini" if "Gemini" in provider else "Offline")
         new_roadmap = generate_unified_roadmap(
             goal=goal_text,
@@ -222,29 +233,39 @@ def _execute_roadmap_generation(goal_text: str) -> None:
         persist_state()
         st.rerun()
 
-# One-Click Quick Pick Options
-selected_pill = st.pills(
-    "Quick Goal Suggestions:",
-    options=list(QUICK_PICKS.keys()),
-    help="Click any goal to instantly synthesize a tailored curriculum"
-)
+# Goal intake section
+st.markdown("<div style='font-size:12px; font-weight:600; text-transform:uppercase; color:#8A8A8A; letter-spacing:0.04em; margin-bottom:8px;'>What do you want to become?</div>", unsafe_allow_html=True)
 
-if selected_pill and selected_pill != st.session_state.get("_last_pill"):
-    st.session_state._last_pill = selected_pill
-    st.session_state.goal_box = QUICK_PICKS[selected_pill]
-    _execute_roadmap_generation(QUICK_PICKS[selected_pill])
-
-# Perfectly aligned goal search bar & button
-col_query, col_btn = st.columns([4.2, 1], vertical_alignment="center")
+col_query, col_btn = st.columns([4.2, 1.2], vertical_alignment="center")
 with col_query:
     goal_query = st.text_input(
-        "Enter your learning goal:",
-        placeholder="e.g. Become an AI & Machine Learning Engineer, learn guitar, or crack JEE",
+        "What do you want to become?",
+        placeholder="e.g. Become an AI Product Engineer, Full-Stack Developer, or Data Scientist",
         key="goal_box",
         label_visibility="collapsed"
     )
 with col_btn:
-    btn_generate = st.button("Build Roadmap", type="primary", use_container_width=True)
+    btn_generate = st.button("Build learning path", type="primary", use_container_width=True)
+
+# Clean single-line popular goals pills
+popular_goals = {
+    "AI Engineering": "I want to become an AI & Machine Learning Engineer",
+    "Full-Stack Web": "I want to become a Full-Stack Web Developer",
+    "Data Science": "I want to master Data Science and Predictive Analytics",
+    "Cybersecurity": "I want to become a Cybersecurity Analyst and Ethical Hacker",
+    "Cloud & DevOps": "I want to become a Cloud Solutions Architect with Docker and Kubernetes"
+}
+
+selected_pop = st.pills(
+    "Popular goals:",
+    options=list(popular_goals.keys()),
+    label_visibility="visible"
+)
+
+if selected_pop and selected_pop != st.session_state.get("_last_pop_pill"):
+    st.session_state._last_pop_pill = selected_pop
+    st.session_state.goal_box = popular_goals[selected_pop]
+    _execute_roadmap_generation(popular_goals[selected_pop])
 
 if btn_generate and goal_query.strip():
     _execute_roadmap_generation(goal_query.strip())
@@ -252,12 +273,12 @@ if btn_generate and goal_query.strip():
 # Empty State Guard
 if not st.session_state.roadmap_data:
     empty_html = """
-    <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:36px; text-align:center; margin-top:20px;">
-        <h3 style="font-family:'Outfit',sans-serif; font-size:1.4rem; color:#F8FAFC; margin-bottom:8px;">
-            Tell PathFinder what you want to become.
+    <div class="content-card" style="text-align:center; padding:48px 24px; margin-top:20px;">
+        <h3 style="font-size:18px; color:#171717; margin-bottom:8px;">
+            Tell PathFinder what you want to achieve.
         </h3>
-        <p style="color:#94A3B8; font-size:0.95rem; max-width:560px; margin:0 auto 20px auto; line-height:1.6;">
-            Select a suggested goal above, enter any custom objective, or pick an evaluation persona in the sidebar to generate your personalized, prerequisite-aware learning roadmap.
+        <p style="color:#666666; font-size:14px; max-width:540px; margin:0 auto; line-height:1.6;">
+            Select a popular goal above, enter any custom objective, or choose an evaluation persona in the sidebar to generate your prerequisite-aware learning roadmap.
         </p>
     </div>
     """
@@ -265,14 +286,14 @@ if not st.session_state.roadmap_data:
     st.stop()
 
 # ==========================================
-# 3-TAB STREAMLINED ARCHITECTURE
+# 3-TAB RESTRAINED ARCHITECTURE
 # ==========================================
 roadmap = st.session_state.roadmap_data
 
 tab_overview, tab_learning_path, tab_mentor = st.tabs([
-    "📊 Overview & Next Steps",
-    "🗺️ Learning Path & Milestones",
-    "🤖 PathFinder Mentor"
+    "Overview",
+    "Learning Path",
+    "Mentor"
 ])
 
 # ------------------------------------------
@@ -285,29 +306,29 @@ with tab_overview:
     elif st.session_state.get("_show_replan_banner"):
         last_title = st.session_state.get("_last_completed_title", "milestone")
         banner_html = f"""
-        <div class="replan-banner">
-            <strong>⚡ ROADMAP ADAPTED:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
+        <div class="path-updated-banner">
+            <strong>Path Updated:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
         </div>
         """
         st.markdown(clean_html(banner_html), unsafe_allow_html=True)
 
-    # 2. Skill Gap Diagnostic Section (Horizontal Competency Bars: Primary)
+    # 2. Skill Gap Diagnostic Section (Horizontal Competency Comparison)
     render_skill_gap_section(roadmap, st.session_state.user_profile)
 
-    # 3. Prominent NEXT BEST ACTION Card
+    # 3. Prominent NEXT UP Card
     render_next_best_action_card(roadmap, st.session_state.completed_nodes)
 
-    # 4. Interactive Diagnostic Assessment (Adaptive Loop Demo)
+    # 4. Interactive Skill Check Assessment (Adaptive Loop Demo)
     render_diagnostic_assessment_widget(roadmap, st.session_state.user_profile)
 
     # 5. Compact Curriculum Progress Summary
     stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)
     st.markdown(f"""
-    <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:14px 20px; margin-top:14px; display:flex; justify-content:space-between; align-items:center;">
-        <span style="font-size:0.88rem; color:#94A3B8;">
-            Curriculum Progress: <strong style="color:#F8FAFC;">{stats['completed_count']} / {stats['total_nodes']} Modules Mastered</strong> ({stats['progress_pct']}%)
+    <div style="background:#FFFFFF; border:1px solid #E5E5E2; border-radius:8px; padding:14px 18px; margin-top:14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+        <span style="font-size:13px; color:#666666;">
+            Curriculum Progress: <strong style="color:#171717;">{stats['completed_count']} / {stats['total_nodes']} Modules Mastered</strong> ({stats['progress_pct']}%)
         </span>
-        <span style="font-size:0.82rem; color:#60A5FA;">
+        <span style="font-size:12.5px; color:#2563EB;">
             Switch to <strong>Learning Path</strong> tab to view interactive DAG canvas.
         </span>
     </div>
@@ -345,7 +366,7 @@ with tab_mentor:
 
     with col_side:
         # Collapsible Radar Chart (Secondary Visualization)
-        with st.expander("📈 **Competency Radar Analysis**", expanded=False):
+        with st.expander("Competency Radar Analysis", expanded=False):
             render_dynamic_radar_chart(
                 roadmap=roadmap,
                 profile=st.session_state.user_profile,

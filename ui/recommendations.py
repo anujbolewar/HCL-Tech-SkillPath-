@@ -13,7 +13,7 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
     st.caption("Curated courses and practical capstone projects sequenced by prerequisite dependencies.")
 
     for phase in roadmap.get("phases", []):
-        st.markdown(f"#### {phase.get('phase', 'Phase')}")
+        st.markdown(f"<div style='font-size:14px; font-weight:650; color:#171717; margin: 18px 0 10px 0;'>{phase.get('phase', 'Phase')}</div>", unsafe_allow_html=True)
 
         for node in phase.get("nodes", []):
             node_id = node.get("id", "")
@@ -25,15 +25,15 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
 
             with c_card:
                 card_class = (
-                    "milestone-card completed" if is_done
-                    else "milestone-card active" if prereqs_met
-                    else "milestone-card locked"
+                    "milestone-item milestone-item-completed" if is_done
+                    else "milestone-item milestone-item-ready" if prereqs_met
+                    else "milestone-item milestone-item-locked"
                 )
 
                 status_html = (
-                    "<span class=\"status-tag status-completed\">✓ Completed</span>" if is_done
-                    else "<span class=\"status-tag status-active\">▶ Unlocked</span>" if prereqs_met
-                    else "<span class=\"status-tag status-locked\">🔒 Locked</span>"
+                    "<span class=\"status-tag status-completed\">Completed</span>" if is_done
+                    else "<span class=\"status-tag status-active\">Up Next</span>" if prereqs_met
+                    else "<span class=\"status-tag status-locked\">Locked</span>"
                 )
 
                 skills_str = " · ".join(node.get("skills", []))
@@ -46,17 +46,17 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
                 card_html = f"""
                 <div class="{card_class}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <div class="milestone-title">{node_id}: {n_title}</div>
+                        <strong style="font-size:14px; color:#171717;">{node_id}: {n_title}</strong>
                         {status_html}
                     </div>
-                    <div class="milestone-meta">
+                    <div style="font-size:12.5px; color:#666666; margin-bottom:6px;">
                         {n_prov} · <strong>{n_dur}</strong> · {n_type}
                     </div>
-                    <div class="milestone-why">
+                    <div style="font-size:13px; color:#404040; line-height:1.45; margin-bottom:6px;">
                         {n_why}
                     </div>
-                    <div style="font-size:0.8rem; color:#64748B; margin-top:4px;">
-                        Skills: {skills_str}
+                    <div style="font-size:12px; color:#8A8A8A;">
+                        Competencies: {skills_str}
                     </div>
                 </div>
                 """
@@ -64,7 +64,7 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
 
             with c_action:
                 if is_done:
-                    if st.button("✓ Completed", key=f"rec_undo_{node_id}", use_container_width=True):
+                    if st.button("Completed", key=f"rec_undo_{node_id}", use_container_width=True):
                         completed_nodes.remove(node_id)
                         persist_state()
                         st.rerun()

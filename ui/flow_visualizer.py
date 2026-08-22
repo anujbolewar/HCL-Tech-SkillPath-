@@ -23,7 +23,7 @@ def render_dag_flowchart(
     completed_nodes: Set[str],
     profile: Dict[str, Any]
 ) -> None:
-    """Renders the interactive React Flow DAG canvas with side-by-side node inspector."""
+    """Renders the interactive React Flow DAG canvas with side-by-side node inspector in clean light mode."""
     all_nodes_dict: Dict[str, Dict[str, Any]] = {}
     node_phase_map: Dict[str, int] = {}
     
@@ -37,14 +37,14 @@ def render_dag_flowchart(
 
     # Legend Header
     legend_html = """
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <span style="font-family:'Outfit',sans-serif; font-size:1.05rem; font-weight:600; color:#F8FAFC;">
-            Learning Roadmap (DAG)
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #E5E5E2; padding-bottom:8px;">
+        <span style="font-size:15px; font-weight:650; color:#171717;">
+            Learning Path (Prerequisite DAG)
         </span>
-        <div style="display:flex; gap:14px; font-size:0.78rem; color:#94A3B8;">
-            <span><span style="color:#34D399; font-weight:700;">●</span> Completed</span>
-            <span><span style="color:#60A5FA; font-weight:700;">●</span> Unlocked / Next</span>
-            <span><span style="color:#64748B; font-weight:700;">●</span> Locked (Prereqs Pending)</span>
+        <div style="display:flex; gap:16px; font-size:12px; color:#666666;">
+            <span><span style="color:#15803D; font-weight:700;">●</span> Completed</span>
+            <span><span style="color:#2563EB; font-weight:700;">●</span> Up Next / Unlocked</span>
+            <span><span style="color:#8A8A8A; font-weight:700;">●</span> Locked (Prerequisites Pending)</span>
         </div>
     </div>
     """
@@ -65,12 +65,38 @@ def render_dag_flowchart(
                 pos_y = node_idx * 120 - 20
 
                 if status == "completed":
-                    label = f"✓ {node_id}: {node['title']}\n{node.get('duration', '2w')} [Completed]"
+                    label = f"{node_id}: {node['title']}\n{node.get('duration', '2w')} [Completed]"
+                    node_style = {
+                        "backgroundColor": "#F0FDF4",
+                        "color": "#15803D",
+                        "border": "1.5px solid #15803D",
+                        "borderRadius": "6px",
+                        "fontSize": "11px",
+                        "fontWeight": "500",
+                        "padding": "6px 8px"
+                    }
                 elif status == "ready":
-                    label = f"▶ {node_id}: {node['title']}\n{node.get('duration', '2w')} [Unlocked]"
+                    label = f"{node_id}: {node['title']}\n{node.get('duration', '2w')} [Up Next]"
+                    node_style = {
+                        "backgroundColor": "#EFF6FF",
+                        "color": "#1D4ED8",
+                        "border": "1.5px solid #2563EB",
+                        "borderRadius": "6px",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "padding": "6px 8px"
+                    }
                 else:
                     prereq_info = f"Requires {', '.join(node.get('prereqs', []))}"
-                    label = f"🔒 {node_id}: {node['title']}\n{prereq_info}"
+                    label = f"{node_id}: {node['title']}\n{prereq_info} [Locked]"
+                    node_style = {
+                        "backgroundColor": "#FFFFFF",
+                        "color": "#666666",
+                        "border": "1px solid #E5E5E2",
+                        "borderRadius": "6px",
+                        "fontSize": "11px",
+                        "padding": "6px 8px"
+                    }
 
                 flow_node = StreamlitFlowNode(
                     id=node_id,
@@ -78,7 +104,8 @@ def render_dag_flowchart(
                     data={"content": label},
                     node_type="input" if not node.get("prereqs") else "output" if phase_idx == total_phases - 1 else "default",
                     source_position="right",
-                    target_position="left"
+                    target_position="left",
+                    style=node_style
                 )
                 flow_nodes.append(flow_node)
 
@@ -88,7 +115,8 @@ def render_dag_flowchart(
                         id=edge_id,
                         source=prereq,
                         target=node_id,
-                        animated=(status == "ready")
+                        animated=(status == "ready"),
+                        style={"stroke": "#2563EB" if status == "ready" else "#D4D4D0"}
                     )
                     flow_edges.append(flow_edge)
 
@@ -103,7 +131,8 @@ def render_dag_flowchart(
                 show_minimap=True,
                 show_controls=True,
                 get_node_on_click=True,
-                layout=TreeLayout(direction="right")
+                layout=TreeLayout(direction="right"),
+                style={"backgroundColor": "#F7F7F5", "border": "1px solid #E5E5E2", "borderRadius": "8px"}
             )
 
         # Catch canvas click event
@@ -112,8 +141,8 @@ def render_dag_flowchart(
             st.session_state.selected_node_id = event.selected_id
 
         with side_ctrl:
-            st.markdown("<div style='font-size:0.82rem; font-weight:700; color:#94A3B8; text-transform:uppercase; margin-bottom:4px;'>Inspect Milestone:</div>", unsafe_allow_html=True)
-            node_options = ["None (Select or click)"] + list(all_nodes_dict.keys())
+            st.markdown("<div style='font-size:12px; font-weight:600; color:#8A8A8A; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.04em;'>Module Inspector</div>", unsafe_allow_html=True)
+            node_options = ["None (Select or click node)"] + list(all_nodes_dict.keys())
             curr_idx = 0
             if selected_node_id in all_nodes_dict:
                 curr_idx = node_options.index(selected_node_id)
@@ -123,9 +152,9 @@ def render_dag_flowchart(
                 node_options,
                 index=curr_idx,
                 label_visibility="collapsed",
-                help="Inspect why PathFinder recommended this milestone."
+                help="Inspect rationale and prerequisite requirements for any node."
             )
-            if picked != "None (Select or click)":
+            if picked != "None (Select or click node)":
                 selected_node_id = picked
                 st.session_state.selected_node_id = picked
 
@@ -138,51 +167,35 @@ def render_dag_flowchart(
                 )
                 render_node_inspector(node_obj, score, breakdown)
             else:
-                prompt_html = """
-                <div class="node-inspector-box" style="color:#94A3B8; font-size:0.85rem; line-height:1.5;">
-                    💡 <strong>Node Inspector</strong><br>
-                    Click any node on the roadmap canvas or choose from the dropdown to view its prerequisite chain, provider, and Explainable AI match score.
+                placeholder_html = """
+                <div class="node-inspector-box" style="text-align:center; padding:24px 16px; color:#8A8A8A;">
+                    <div style="font-size:13px; font-weight:600; color:#171717; margin-bottom:4px;">Node Inspector</div>
+                    <div style="font-size:12px; line-height:1.45;">Click any node on the roadmap canvas or select from the dropdown to view its prerequisite chain, provider, and relevance score.</div>
                 </div>
                 """
-                st.markdown(clean_html(prompt_html), unsafe_allow_html=True)
+                st.markdown(clean_html(placeholder_html), unsafe_allow_html=True)
 
     else:
-        # Graphviz fallback
+        # Graceful fallback with Graphviz (Light Mode)
+        dot = graphviz.Digraph(comment="Learning Path", format="svg")
+        dot.attr(rankdir="LR", bgcolor="#FFFFFF", splines="ortho")
+        dot.attr("node", fontname="Inter, sans-serif", fontsize="11", style="filled,rounded", shape="box", margin="0.15,0.1")
+        dot.attr("edge", color="#E5E5E2", arrowsize="0.75")
+
+        for phase in roadmap.get("phases", []):
+            for node in phase.get("nodes", []):
+                node_id = node["id"]
+                status = get_node_status(node, completed_nodes)
+                if status == "completed":
+                    dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#F0FDF4", color="#15803D", fontcolor="#15803D")
+                elif status == "ready":
+                    dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#EFF6FF", color="#2563EB", fontcolor="#1D4ED8")
+                else:
+                    dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#F7F7F5", color="#E5E5E2", fontcolor="#8A8A8A")
+
+                for prereq in node.get("prereqs", []):
+                    edge_color = "#2563EB" if status == "ready" else "#E5E5E2"
+                    dot.edge(prereq, node_id, color=edge_color)
+
         with flow_col:
-            dot = graphviz.Digraph(comment="Learning Path DAG", graph_attr={"rankdir": "LR", "bgcolor": "transparent"})
-            dot.attr("node", shape="box", style="filled,rounded", fontname="Inter", fontsize="10")
-
-            for phase_idx, phase in enumerate(roadmap.get("phases", [])):
-                with dot.subgraph(name=f"cluster_{phase_idx}") as c:
-                    c.attr(label=phase.get("phase", ""), color="#334155", style="dashed", fontcolor="#94A3B8")
-                    for node in phase.get("nodes", []):
-                        status = get_node_status(node, completed_nodes)
-                        if status == "completed":
-                            bg_color, text_color, border_color, tag = "#064E3B", "#FFFFFF", "#059669", "✓"
-                        elif status == "ready":
-                            bg_color, text_color, border_color, tag = "#1E293B", "#F8FAFC", "#3B82F6", "▶"
-                        else:
-                            bg_color, text_color, border_color, tag = "#0F1626", "#64748B", "#334155", "🔒"
-
-                        label_text = f"{tag} {node['id']}: {node['title']}\\n{node.get('duration', '')}"
-                        c.node(node["id"], label=label_text, fillcolor=bg_color, fontcolor=text_color, color=border_color, penwidth="1.5")
-
-                        for prereq in node.get("prereqs", []):
-                            dot.edge(prereq, node["id"], color="#3B82F6", penwidth="1.2")
-
-            st.graphviz_chart(dot, width="stretch")
-
-        with side_ctrl:
-            node_options = ["None (Select node)"] + list(all_nodes_dict.keys())
-            picked = st.selectbox("Inspect Node:", node_options, index=0)
-            if picked != "None (Select node)":
-                selected_node_id = picked
-                st.session_state.selected_node_id = picked
-            
-            if selected_node_id and selected_node_id in all_nodes_dict:
-                node_obj = all_nodes_dict[selected_node_id]
-                p_idx = node_phase_map.get(selected_node_id, 0)
-                score, breakdown = compute_node_relevance(
-                    node_obj, profile, completed_nodes, p_idx, total_phases
-                )
-                render_node_inspector(node_obj, score, breakdown)
+            st.graphviz_chart(dot, use_container_width=True)

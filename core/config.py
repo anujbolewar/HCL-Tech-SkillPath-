@@ -3,7 +3,7 @@
 from typing import Dict, List, Any
 
 # App Metadata & Team Info
-APP_TITLE = "SkillPath AI — Learn Anything"
+APP_TITLE = "PathFinder AI — Learn Anything"
 APP_SUBTITLE = "AI-Powered Personalized Learning Path Recommender (PathFinder Prototype)"
 TEAM_NAME = "Cortex"
 COLLEGE_NAME = "Yeshwantrao Chavan College of Engineering"
@@ -16,7 +16,7 @@ TEAM_MEMBERS = [
 ]
 
 WELCOME_MESSAGE = (
-    "👋 Hi! I'm your **SkillPath AI Mentor by Team Cortex**.\n\n"
+    "Hi, I'm your **PathFinder Mentor by Team Cortex**.\n\n"
     "I can help you explore your customized roadmap, break down complex prerequisites, "
     "recommend top resources, or guide your weekly schedule. How can I help you today?"
 )
@@ -31,25 +31,25 @@ DEFAULT_PROFILE: Dict[str, Any] = {
     "preferred_learning_style": "Hands-on Projects"
 }
 
-# 12 Universal Quick Picks
+# Universal Quick Picks
 QUICK_PICKS: Dict[str, str] = {
-    "🤖 AI & ML Engineer": "I want to become an AI & Machine Learning Engineer",
-    "🌐 Full-Stack Web Developer": "I want to become a Full-Stack Web Developer",
-    "📊 Data Scientist": "I want to master Data Science and Predictive Analytics",
-    "🛡️ Cybersecurity Analyst": "I want to become a Cybersecurity Analyst and Ethical Hacker",
-    "☁️ Cloud & DevOps Engineer": "I want to become a Cloud Solutions Architect with Docker and Kubernetes",
-    "🎸 Learn Guitar": "I want to learn guitar from scratch and play my favorite songs",
-    "🗣️ Speak Fluent Spanish": "I want to become conversational and fluent in Spanish",
-    "💪 Fitness & Strength Transformation": "I want to build strength, improve stamina, and optimize nutrition",
-    "🍳 Gourmet Cooking & Baking": "I want to master culinary knife skills, flavor pairing, and baking",
-    "✏️ Digital Art & Illustration": "I want to learn digital drawing, anatomy, and color theory",
-    "📈 Startup Founder & Marketing": "I want to validate, build, and launch a profitable tech startup",
-    "📚 Crack JEE / Competitive Exam": "I want to crack competitive entrance exams with a structured daily study plan"
+    "AI & ML Engineer": "I want to become an AI & Machine Learning Engineer",
+    "Full-Stack Web Developer": "I want to become a Full-Stack Web Developer",
+    "Data Scientist": "I want to master Data Science and Predictive Analytics",
+    "Cybersecurity Analyst": "I want to become a Cybersecurity Analyst and Ethical Hacker",
+    "Cloud & DevOps Engineer": "I want to become a Cloud Solutions Architect with Docker and Kubernetes",
+    "Learn Guitar": "I want to learn guitar from scratch and play my favorite songs",
+    "Speak Fluent Spanish": "I want to become conversational and fluent in Spanish",
+    "Fitness & Strength Transformation": "I want to build strength, improve stamina, and optimize nutrition",
+    "Gourmet Cooking & Baking": "I want to master culinary knife skills, flavor pairing, and baking",
+    "Digital Art & Illustration": "I want to learn digital drawing, anatomy, and color theory",
+    "Startup Founder & Marketing": "I want to validate, build, and launch a profitable tech startup",
+    "Crack Competitive Exam": "I want to crack competitive entrance exams with a structured daily study plan"
 }
 
-# Rich Demo Personas for 1-Click Evaluation
+# Rich Demo Personas for 1-Click Evaluation (Zero Emojis)
 DEMO_PERSONAS: Dict[str, Dict[str, Any]] = {
-    "🤖 Persona 1: AI & ML Aspirant (Alex)": {
+    "Persona 1: AI & ML Aspirant (Alex)": {
         "goal": "I want to become an AI & Machine Learning Engineer",
         "profile": {
             "target_role": "AI & ML Engineer",
@@ -60,7 +60,7 @@ DEMO_PERSONAS: Dict[str, Dict[str, Any]] = {
         },
         "completed_initial": ["AI101"]
     },
-    "🌐 Persona 2: Web Dev Switcher (Sarah)": {
+    "Persona 2: Web Dev Switcher (Sarah)": {
         "goal": "I want to transition into Full-Stack Web Development",
         "profile": {
             "target_role": "Full-Stack Web Developer",
@@ -71,7 +71,7 @@ DEMO_PERSONAS: Dict[str, Dict[str, Any]] = {
         },
         "completed_initial": []
     },
-    "🎸 Persona 3: Music Hobbyist (Carlos)": {
+    "Persona 3: Music Hobbyist (Carlos)": {
         "goal": "I want to learn acoustic and electric guitar from scratch",
         "profile": {
             "target_role": "Musician",
@@ -82,7 +82,7 @@ DEMO_PERSONAS: Dict[str, Dict[str, Any]] = {
         },
         "completed_initial": ["MU101"]
     },
-    "🗣️ Persona 4: Global Polyglot (Elena)": {
+    "Persona 4: Global Polyglot (Elena)": {
         "goal": "I want to become fluent in Spanish for business and travel",
         "profile": {
             "target_role": "Language Learner",
@@ -93,59 +93,58 @@ DEMO_PERSONAS: Dict[str, Dict[str, Any]] = {
         },
         "completed_initial": ["LG101"]
     },
-    "📚 Persona 5: High-Score Exam Topper (Rohan)": {
+    "Persona 5: High-Score Exam Topper (Rohan)": {
         "goal": "I want to crack national engineering entrance exams with top rank",
         "profile": {
             "target_role": "Exam Topper",
             "experience_level": "Intermediate",
-            "weekly_hours": 30,
-            "skills": ["Basic Math", "Physics", "Chemistry"],
-            "preferred_learning_style": "Hands-on Projects"
+            "weekly_hours": 25,
+            "skills": ["Calculus", "Physics", "Chemistry"],
+            "preferred_learning_style": "Problem Sets"
         },
-        "completed_initial": ["EX101", "EX102"]
+        "completed_initial": ["EX101"]
     }
 }
 
-# Groq Supported Models with Suitability Annotations
+# Groq Model Catalog
 GROQ_MODEL_CATALOG: Dict[str, Dict[str, str]] = {
     "llama-3.3-70b-versatile": {
         "name": "Llama 3.3 70B Versatile",
-        "tag": "⭐ Recommended for Roadmap Generation",
-        "desc": "Best for complex prerequisite DAG planning, structured JSON extraction, and deep domain reasoning."
+        "tier": "Production",
+        "context": "128k",
+        "tag": "Recommended"
     },
     "llama-3.1-8b-instant": {
         "name": "Llama 3.1 8B Instant",
-        "tag": "⚡ Ultra-Fast for Live Chat",
-        "desc": "Sub-100ms latency, ideal for real-time conversational mentoring and immediate Q&A."
+        "tier": "Ultra-Fast",
+        "context": "128k",
+        "tag": "Fastest"
     },
     "mixtral-8x7b-32768": {
-        "name": "Mixtral 8x7B (MoE)",
-        "tag": "🧠 Extended Context",
-        "desc": "32k token window, robust for multi-turn learning roadmap reviews and large skill portfolios."
+        "name": "Mixtral 8x7B MoE",
+        "tier": "Balanced",
+        "context": "32k",
+        "tag": "Reliable"
     },
     "gemma2-9b-it": {
-        "name": "Gemma 2 9B Instruct",
-        "tag": "🎯 Precise & Concise",
-        "desc": "Google's lightweight model optimized for concise instructional explanations."
-    },
-    "qwen-2.5-32b": {
-        "name": "Qwen 2.5 32B",
-        "tag": "🌐 Multilingual & Math",
-        "desc": "Superior performance in technical STEM domains, coding, and multilingual path generation."
+        "name": "Google Gemma 2 9B",
+        "tier": "Compact",
+        "context": "8k",
+        "tag": "Instruction Tuned"
     }
 }
 
-# Google Gemini Models Catalog
+# Google Gemini Model Catalog
 GEMINI_MODEL_CATALOG: Dict[str, Dict[str, str]] = {
     "gemini-2.5-flash": {
         "name": "Gemini 2.5 Flash",
-        "tag": "⭐ Recommended for Gemini",
-        "desc": "State-of-the-art fast reasoning model with high JSON fidelity and multimodal understanding."
+        "tier": "Multimodal Speed",
+        "tag": "Recommended"
     },
     "gemini-2.5-pro": {
         "name": "Gemini 2.5 Pro",
-        "tag": "🔬 Deep Architectural Reasoning",
-        "desc": "Complex thinking and curriculum design with large context windows."
+        "tier": "Deep Reasoning",
+        "tag": "Advanced Reasoning"
     }
 }
 
