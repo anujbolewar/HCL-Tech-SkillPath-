@@ -10,10 +10,10 @@ from engine.gemini_engine import stream_gemini_chat_response, HAS_GEMINI
 from engine.llm_router import generate_offline_streaming_mentor_reply
 
 SUGGESTED_PROMPTS = [
-    "👉 What should I do next?",
+    "👉 What should I learn today?",
     "💡 Why was my Phase 2 project chosen?",
-    "📅 Recommend a weekly study plan",
-    "📚 Additional free practice resources"
+    "🔍 Explain my skill gaps",
+    "📅 Plan weekly study schedule"
 ]
 
 def build_mentor_system_prompt(roadmap: Dict[str, Any], profile: Dict[str, Any], completed_nodes: Set[str]) -> str:
@@ -43,7 +43,7 @@ def build_mentor_system_prompt(roadmap: Dict[str, Any], profile: Dict[str, Any],
 
     roadmap_context = "\n".join(ctx_lines)
 
-    return f"""You are PathFinder AI Mentor by Team Cortex — an expert, encouraging curriculum mentor.
+    return f"""You are PathFinder Mentor by Team Cortex — an expert, pragmatic curriculum tutor.
 The student's COMPLETE personalized roadmap is provided below. Answer queries STRICTLY anchored in this roadmap context.
 
 {roadmap_context}
@@ -51,7 +51,7 @@ The student's COMPLETE personalized roadmap is provided below. Answer queries ST
 RULES:
 1. Reference specific module IDs (e.g. "AI101", "FS201") and titles when guiding.
 2. If asked what to do next, point directly to the FIRST [NEXT-UNBLOCKED] milestone and explain its rationale.
-3. Keep responses concise, friendly, and practical (under 140 words).
+3. Keep responses compact, friendly, and practical (under 120 words).
 4. Use clean Markdown bullet points where appropriate.
 """
 
@@ -65,11 +65,11 @@ def render_ai_mentor_chat(
     groq_api_key: str = "",
     gemini_api_key: str = ""
 ) -> None:
-    """Renders the AI Mentor conversational window with real-time streaming."""
-    st.markdown("### AI Learning Mentor")
-    st.caption("Context-aware AI mentor grounded in your active roadmap and completed prerequisites.")
+    """Renders the PathFinder Mentor conversational window with real-time streaming."""
+    st.markdown("### PathFinder Mentor")
+    st.caption("Context-aware AI tutor grounded in your active roadmap and prerequisite progression.")
 
-    # Suggested prompt chips
+    # Contextual action chips
     st.markdown("<div style='margin-bottom:8px;'>", unsafe_allow_html=True)
     chip_cols = st.columns(len(SUGGESTED_PROMPTS))
     prompt_to_send = None
@@ -80,14 +80,14 @@ def render_ai_mentor_chat(
     st.markdown("</div>", unsafe_allow_html=True)
 
     # Chat history display container
-    chat_container = st.container(height=340)
+    chat_container = st.container(height=320)
     with chat_container:
         for msg in st.session_state.get("chat_history", []):
             with st.chat_message(msg["role"]):
                 st.markdown(msg["content"])
 
     # User input
-    typed_prompt = st.chat_input("Ask about prerequisites, study routines, or module guidance...")
+    typed_prompt = st.chat_input("Ask PathFinder Mentor about prerequisites or study plans...")
     active_prompt = prompt_to_send or typed_prompt
 
     if active_prompt:
@@ -114,7 +114,6 @@ def render_ai_mentor_chat(
                 stream_generator = stream_gemini_chat_response(messages, gem_key, model_name)
                 full_reply = st.write_stream(stream_generator)
             else:
-                # Intelligent offline streaming mentor
                 stream_generator = generate_offline_streaming_mentor_reply(
                     active_prompt, roadmap, profile, completed_nodes
                 )

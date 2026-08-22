@@ -1,7 +1,8 @@
-"""SkillPath AI — AI-Powered Personalized Learning Path Recommender (PathFinder Prototype).
+"""PathFinder AI — AI-Powered Personalized Learning Path Recommender.
 
 Developed by Team Cortex for HCL Tech Hackathon (Round 2).
-Sleek, human-crafted Streamlit application with spatial discipline and clean aesthetics.
+Streamlined, human-crafted educational platform prioritizing the core learner journey:
+GOAL → CURRENT SKILLS → SKILL GAPS → ROADMAP → NEXT BEST ACTION → ADAPTIVE REPLANNING.
 """
 
 import os
@@ -46,7 +47,12 @@ from engine.llm_router import generate_unified_roadmap
 
 # UI components
 from ui.styles import inject_custom_styles
-from ui.components import render_hero_header, render_metrics_summary_bar
+from ui.components import (
+    render_app_header,
+    render_skill_gap_section,
+    render_next_best_action_card,
+    render_node_inspector,
+)
 from ui.flow_visualizer import render_dag_flowchart
 from ui.radar_chart import render_dynamic_radar_chart
 from ui.chat_interface import render_ai_mentor_chat
@@ -57,11 +63,11 @@ from ui.export_generator import (
 )
 
 # ==========================================
-# PAGE CONFIGURATION & STYLES
+# PAGE CONFIGURATION & RESTRAINED STYLES
 # ==========================================
 st.set_page_config(
-    page_title="PathFinder AI — Learn Anything",
-    page_icon="assets/logo_small.png" if Path("assets/logo_small.png").exists() else "🎓",
+    page_title="PathFinder AI — Personalized Learning Path",
+    page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -70,31 +76,23 @@ inject_custom_styles()
 initialize_session_state()
 
 # ==========================================
-# SIDEBAR: SETTINGS, PERSONAS & PROFILING
+# SIDEBAR: LEARNER WORKSPACE & SETTINGS
 # ==========================================
 with st.sidebar:
-    if Path("assets/logo.png").exists():
-        st.image("assets/logo.png", width=48)
-    st.markdown("### **PathFinder AI**")
-    st.caption("Curriculum Architect • Team Cortex")
+    st.markdown("### 🎓 **PathFinder Workspace**")
+    st.caption("AI-Powered Curriculum Architect")
 
-    # Evaluation Mode & Persona Switcher
-    st.markdown("#### Evaluation Mode")
-    demo_toggle = st.toggle(
-        "Interactive Demo Mode",
-        key="demo_mode",
-        help="Quickly evaluate pre-configured student personas without manual setup"
+    # Evaluation Mode & Persona Presets
+    st.markdown("#### Evaluation Presets")
+    selected_persona_name = st.selectbox(
+        "Load Student Persona:",
+        options=["Custom Goal"] + list(DEMO_PERSONAS.keys()),
+        index=0,
+        help="Quickly evaluate pre-configured student personas"
     )
 
-    if demo_toggle:
-        selected_persona_name = st.selectbox(
-            "Select Evaluation Persona:",
-            options=list(DEMO_PERSONAS.keys()),
-            index=0
-        )
+    if selected_persona_name != "Custom Goal":
         persona_data = DEMO_PERSONAS[selected_persona_name]
-        
-        # Load persona on selection change
         if st.session_state.get("_loaded_persona") != selected_persona_name:
             st.session_state._loaded_persona = selected_persona_name
             st.session_state.user_profile = persona_data["profile"].copy()
@@ -103,30 +101,21 @@ with st.sidebar:
             )
             st.session_state.completed_nodes = set(persona_data.get("completed_initial", []))
             st.session_state.selected_node_id = None
+            st.session_state._show_replan_banner = False
             persist_state()
-            st.toast(f"Loaded {selected_persona_name}!", icon="🎯")
             st.rerun()
 
     # Learner Profile Section
     st.divider()
     st.markdown("#### Learner Profile")
-    with st.expander("Adjust Profile & Pace", expanded=not demo_toggle):
-        role_input = st.selectbox(
-            "Primary Domain Focus",
-            [
-                "AI & ML Engineer", "Full-Stack Web Developer", "Data Scientist",
-                "Cybersecurity Analyst", "Cloud & DevOps Engineer", "Musician",
-                "Language Learner", "Fitness Enthusiast", "Exam Topper"
-            ],
-            index=0
-        )
+    with st.expander("Edit Background & Pace", expanded=False):
         exp_input = st.select_slider(
-            "Current Experience Level",
+            "Experience Level",
             options=["Beginner", "Intermediate", "Advanced"],
             value=st.session_state.user_profile.get("experience_level", "Intermediate")
         )
         hours_input = st.slider(
-            "Weekly Commitment (Hours)",
+            "Weekly Study Hours",
             min_value=5,
             max_value=40,
             value=st.session_state.user_profile.get("weekly_hours", 15)
@@ -141,17 +130,16 @@ with st.sidebar:
         )
 
         st.session_state.user_profile.update({
-            "target_role": role_input,
             "experience_level": exp_input,
             "weekly_hours": hours_input,
             "skills": known_skills_input
         })
 
-    # Advanced AI Model Settings (Clean, Collapsible)
+    # Collapsed Developer Settings (API Keys)
     st.divider()
-    with st.expander("⚙️ Advanced AI Model Settings", expanded=False):
+    with st.expander("⚙️ Developer Settings", expanded=False):
         provider = st.radio(
-            "AI Inference Engine",
+            "Inference Provider",
             ["Smart Offline (Default)", "Groq Cloud (Llama 3.3)", "Google Gemini"],
             index=0
         )
@@ -168,14 +156,14 @@ with st.sidebar:
                 value=os.environ.get("GROQ_API_KEY", "")
             )
             selected_model_key = st.selectbox(
-                "Groq Model",
+                "Model",
                 options=list(GROQ_MODEL_CATALOG.keys()),
                 index=0
             )
             active_model = selected_model_key
             if groq_key_input:
                 os.environ["GROQ_API_KEY"] = groq_key_input
-                st.caption("✅ Groq Key Active")
+                st.caption("✅ Groq Active")
 
         elif provider == "Google Gemini":
             gemini_key_input = st.text_input(
@@ -185,15 +173,14 @@ with st.sidebar:
                 value=os.environ.get("GEMINI_API_KEY", "")
             )
             selected_gemini_key = st.selectbox(
-                "Gemini Model",
+                "Model",
                 options=list(GEMINI_MODEL_CATALOG.keys()),
                 index=0
             )
             active_model = selected_gemini_key
             if gemini_key_input:
                 os.environ["GEMINI_API_KEY"] = gemini_key_input
-                st.caption("✅ Gemini Key Active")
-
+                st.caption("✅ Gemini Active")
         else:
             st.caption("Using offline topological knowledge graphs.")
 
@@ -204,18 +191,17 @@ with st.sidebar:
         st.rerun()
 
 # ==========================================
-# MAIN INTERFACE: HERO & GOAL INTAKE
+# MAIN INTERFACE: COMPACT HEADER & INTAKE
 # ==========================================
-render_hero_header()
+roadmap = st.session_state.roadmap_data
+role_title = roadmap.get("role", "Curriculum") if roadmap else "Personalized Path"
+render_app_header(role_title)
 
 def _execute_roadmap_generation(goal_text: str) -> None:
-    """Executes roadmap generation pipeline with spinner and error recovery."""
-    if st.session_state.get("demo_mode"):
-        st.session_state._pending_demo_off = True
-
-    with st.spinner("Analyzing learning goals, verifying prerequisite constraints, and synthesizing curriculum..."):
+    """Executes roadmap generation pipeline with validation and state update."""
+    with st.spinner("Assessing skills, mapping gaps, and synthesizing DAG curriculum..."):
         p_name = "Groq" if "Groq" in provider else ("Google Gemini" if "Gemini" in provider else "Offline")
-        roadmap = generate_unified_roadmap(
+        new_roadmap = generate_unified_roadmap(
             goal=goal_text,
             profile=st.session_state.user_profile,
             provider=p_name,
@@ -223,23 +209,18 @@ def _execute_roadmap_generation(goal_text: str) -> None:
             groq_api_key=groq_key_input,
             gemini_api_key=gemini_key_input
         )
-        st.session_state.roadmap_data = roadmap
+        st.session_state.roadmap_data = new_roadmap
         st.session_state.completed_nodes = set()
         st.session_state.selected_node_id = None
-        
-        if st.session_state.get("_pending_demo_off"):
-            st.session_state._pending_demo_off = False
-            st.session_state.demo_mode = False
-
+        st.session_state._show_replan_banner = False
         persist_state()
-        st.toast("Personalized Learning Pathway Generated!", icon="🚀")
         st.rerun()
 
-# Quick Pick Options
+# One-Click Quick Pick Options
 selected_pill = st.pills(
-    "Suggested Learning Objectives:",
+    "Quick Goal Suggestions:",
     options=list(QUICK_PICKS.keys()),
-    help="Click any option to instantly synthesize a customized curriculum"
+    help="Click any goal to instantly synthesize a tailored curriculum"
 )
 
 if selected_pill and selected_pill != st.session_state.get("_last_pill"):
@@ -247,11 +228,11 @@ if selected_pill and selected_pill != st.session_state.get("_last_pill"):
     st.session_state.goal_box = QUICK_PICKS[selected_pill]
     _execute_roadmap_generation(QUICK_PICKS[selected_pill])
 
-col_query, col_btn = st.columns([3.8, 1])
+col_query, col_btn = st.columns([4, 1])
 with col_query:
     goal_query = st.text_input(
-        "Describe your learning goal:",
-        placeholder="e.g. Become a full-stack AI engineer with PyTorch and Next.js, learn acoustic guitar, or crack JEE",
+        "Enter your learning goal:",
+        placeholder="e.g. Become an AI & Machine Learning Engineer, learn guitar, or crack JEE",
         key="goal_box",
         label_visibility="collapsed"
     )
@@ -264,65 +245,63 @@ if btn_generate and goal_query.strip():
 # Empty State Guard
 if not st.session_state.roadmap_data:
     st.markdown("""
-    <div style="background:#0e1320; border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:32px; text-align:center; margin-top:20px;">
-        <div style="font-family:'Outfit',sans-serif; font-size:1.35rem; font-weight:700; color:#f8fafc; margin-bottom:8px;">
-            Get Started with PathFinder AI
-        </div>
-        <p style="color:#94a3b8; font-size:0.95rem; max-width:600px; margin:0 auto 20px auto; line-height:1.6;">
-            Select one of the suggested goals above, type your own custom objective, or enable <strong>Interactive Demo Mode</strong> in the sidebar to evaluate pre-configured student personas.
+    <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:36px; text-align:center; margin-top:20px;">
+        <h3 style="font-family:'Outfit',sans-serif; font-size:1.4rem; color:#F8FAFC; margin-bottom:8px;">
+            Tell PathFinder what you want to become.
+        </h3>
+        <p style="color:#94A3B8; font-size:0.95rem; max-width:560px; margin:0 auto 20px auto; line-height:1.6;">
+            Select a suggested goal above, enter any custom objective, or pick an evaluation persona in the sidebar to generate your personalized, prerequisite-aware learning roadmap.
         </p>
     </div>
     """, unsafe_allow_html=True)
     st.stop()
 
+# ==========================================
+# CORE PRODUCT STORY (FIRST VIEWPORT)
+# ==========================================
 roadmap = st.session_state.roadmap_data
 
-# ==========================================
-# METRICS SUMMARY RIBBON
-# ==========================================
-render_metrics_summary_bar(roadmap, st.session_state.completed_nodes)
+# 1. Skill Gap Diagnostic Section ("Where I Am" vs "Where I Need To Be")
+render_skill_gap_section(roadmap, st.session_state.user_profile)
+
+# 2. Adaptive Replanning Indicator (when a milestone completion updates downstream state)
+if st.session_state.get("_show_replan_banner"):
+    last_title = st.session_state.get("_last_completed_title", "milestone")
+    st.markdown(f"""
+    <div class="replan-banner">
+        <strong>⚡ ROADMAP ADAPTED:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
+    </div>
+    """, unsafe_allow_html=True)
+
+# 3. Prominent NEXT BEST ACTION Card
+render_next_best_action_card(roadmap, st.session_state.completed_nodes)
 
 # ==========================================
-# MAIN TABS (CLEAN, 3-PART UNIFIED LAYOUT)
+# MAIN WORKSPACE: ROADMAP, MILESTONES & MENTOR
 # ==========================================
-tab_flow, tab_milestones, tab_mentor_analytics = st.tabs([
-    "Curriculum DAG Flow",
-    "Actionable Milestones",
-    "AI Mentor & Analytics"
+tab_roadmap, tab_mentor_analytics = st.tabs([
+    "🗺️ Interactive Learning Roadmap",
+    "🤖 PathFinder Mentor & Competency Progress"
 ])
 
-# Tab 1: Interactive Directed Acyclic Graph (DAG)
-with tab_flow:
+with tab_roadmap:
+    # Top: Streamlit Flow React Flow DAG
     render_dag_flowchart(roadmap, st.session_state.completed_nodes, st.session_state.user_profile)
-
-# Tab 2: Actionable Milestones & Recs
-with tab_milestones:
+    
+    st.divider()
+    # Bottom: Detailed Actionable Milestones
     render_recommendation_cards(roadmap, st.session_state.completed_nodes)
 
-# Tab 3: AI Mentor + Competency Analytics
 with tab_mentor_analytics:
     col_analytics, col_mentor = st.columns([1.1, 1.2])
 
     with col_analytics:
+        # Dynamic Skill Competency Polar Radar
         render_dynamic_radar_chart(
             roadmap=roadmap,
             profile=st.session_state.user_profile,
             completed_nodes=st.session_state.completed_nodes
         )
-
-        st.markdown("#### Adaptive Next Action")
-        next_action_res = find_next_recommended_action(roadmap, st.session_state.completed_nodes)
-
-        if next_action_res:
-            next_node, next_phase = next_action_res
-            st.info(f"""
-            **Next Unlocked Target:**  
-            **{next_node['id']}: {next_node['title']}** ({next_node.get('provider', 'Online')})  
-            *Pace:* {next_node.get('duration', '2 weeks')} | *Phase:* {next_phase}  
-            *Why Now:* Prerequisites unlocked. Mastering this unblocks subsequent modules.
-            """)
-        else:
-            st.success("Curriculum Mastered! All milestones completed.")
 
         st.markdown("#### Export Curriculum")
         stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)

@@ -2,8 +2,9 @@
 
 from ui.styles import inject_custom_styles, CUSTOM_CSS
 from ui.components import (
-    render_hero_header,
-    render_metrics_summary_bar,
+    render_app_header,
+    render_skill_gap_section,
+    render_next_best_action_card,
     render_node_inspector,
 )
 from ui.flow_visualizer import render_dag_flowchart
@@ -15,11 +16,16 @@ from ui.export_generator import (
     build_printable_html_export,
 )
 
+# Backward-compatible aliases
+render_hero_header = render_app_header
+
 __all__ = [
     "inject_custom_styles",
     "CUSTOM_CSS",
+    "render_app_header",
     "render_hero_header",
-    "render_metrics_summary_bar",
+    "render_skill_gap_section",
+    "render_next_best_action_card",
     "render_node_inspector",
     "render_dag_flowchart",
     "render_dynamic_radar_chart",

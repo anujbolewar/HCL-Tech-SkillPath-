@@ -1,4 +1,4 @@
-"""Curated course and project recommendation cards component."""
+"""Curated course and project recommendation cards component with typographic metadata."""
 
 from typing import Dict, Any, Set
 import streamlit as st
@@ -7,9 +7,9 @@ from core.state import persist_state
 from engine.re_router import get_node_status
 
 def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
-    """Renders structured recommendation cards with interactive completion toggles."""
+    """Renders structured recommendation cards with single status indicators and clean metadata."""
     st.markdown("### Actionable Milestones & Projects")
-    st.caption("Curated courses, practical projects, and assessments sequenced by prerequisite readiness.")
+    st.caption("Curated courses and practical capstone projects sequenced by prerequisite dependencies.")
 
     for phase in roadmap.get("phases", []):
         st.markdown(f"#### {phase.get('phase', 'Phase')}")
@@ -23,28 +23,35 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
             c_card, c_action = st.columns([4.2, 1])
 
             with c_card:
-                card_class = "module-item completed" if is_done else "module-item"
-                skills_html = " ".join([f"<span class='tag tag-blue'>#{s}</span>" for s in node.get("skills", [])])
-                
-                status_tag = (
-                    "<span class='tag tag-emerald'>✓ Mastered</span>" if is_done
-                    else "<span class='tag tag-indigo'>▶ Unlocked</span>" if prereqs_met
-                    else "<span class='tag tag-slate'>🔒 Locked</span>"
+                card_class = (
+                    "milestone-card completed" if is_done
+                    else "milestone-card active" if prereqs_met
+                    else "milestone-card locked"
                 )
+
+                status_html = (
+                    "<span class=\"status-tag status-completed\">✓ Completed</span>" if is_done
+                    else "<span class=\"status-tag status-active\">▶ Unlocked</span>" if prereqs_met
+                    else "<span class=\"status-tag status-locked\">🔒 Locked</span>"
+                )
+
+                skills_str = " · ".join(node.get("skills", []))
 
                 st.markdown(f"""
                 <div class="{card_class}">
-                    <div class="module-header">
-                        <div>
-                            <span class="tag tag-indigo">{node.get('type', 'Course')}</span>
-                            <span class="tag tag-amber">⏱️ {node.get('duration', '2 weeks')}</span>
-                            <span class="tag tag-slate">🏢 {node.get('provider', 'Online')}</span>
-                        </div>
-                        {status_tag}
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <div class="milestone-title">{node_id}: {node.get('title', '')}</div>
+                        {status_html}
                     </div>
-                    <div class="module-title">{node_id}: {node.get('title', '')}</div>
-                    <div class="module-why">{node.get('why', 'Key competency on your customized roadmap.')}</div>
-                    <div>{skills_html}</div>
+                    <div class="milestone-meta">
+                        {node.get('provider', 'Online')} · <strong>{node.get('duration', '2 weeks')}</strong> · {node.get('type', 'Course')}
+                    </div>
+                    <div class="milestone-why">
+                        {node.get('why', 'Core required competency on your roadmap.')}
+                    </div>
+                    <div style="font-size:0.8rem; color:#64748B; margin-top:4px;">
+                        Skills: {skills_str}
+                    </div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -52,7 +59,7 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
                 st.write(" ")
                 st.write(" ")
                 if is_done:
-                    if st.button("✓ Mastered", key=f"rec_undo_{node_id}", use_container_width=True):
+                    if st.button("✓ Completed", key=f"rec_undo_{node_id}", use_container_width=True):
                         completed_nodes.remove(node_id)
                         persist_state()
                         st.rerun()
@@ -65,8 +72,9 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
                         use_container_width=True
                     ):
                         completed_nodes.add(node_id)
+                        st.session_state["_last_completed_title"] = node.get('title')
+                        st.session_state["_show_replan_banner"] = True
                         persist_state()
-                        st.toast(f"Milestone Mastered: {node.get('title')}!", icon="🎉")
                         st.rerun()
 
                 if not prereqs_met:

@@ -4,76 +4,127 @@ from typing import Dict, Any, List, Set, Optional
 import streamlit as st
 
 from core.config import APP_TITLE, TEAM_NAME
-from engine.re_router import calculate_progress_stats
+from engine.re_router import calculate_progress_stats, get_node_status, find_next_recommended_action
 
-def render_hero_header() -> None:
-    """Renders the top hero card with refined typography and team badge."""
+def render_app_header(role_title: str = "Personalized Curriculum") -> None:
+    """Renders a compact, functional application header (54px tall)."""
     st.markdown(f"""
-    <div class="hero-container">
-        <div class="brand-badge">HCL Tech Hackathon 2026 • Round 2 Prototype</div>
-        <div class="brand-title">PathFinder <span>AI</span></div>
-        <div class="hero-desc">
-            Personalized, milestone-by-milestone curriculum architect. Transforms any learning objective into an adaptive, prerequisite-aware Directed Acyclic Graph (DAG) roadmap.
+    <div class="app-header">
+        <div class="app-brand">
+            🎓 PathFinder <span>AI</span>
+            <span class="app-badge">{role_title}</span>
+        </div>
+        <div style="font-size:0.8rem; color:#94A3B8;">
+            Team Cortex • HCL Tech Hackathon
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 
-def render_metrics_summary_bar(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
-    """Renders the clean 4-column metric summary ribbon."""
-    stats = calculate_progress_stats(roadmap, completed_nodes)
+def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
+    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap diagnostic."""
+    known_skills = set(profile.get("skills") or [])
     
-    st.markdown(f"""
-    <div class="metric-grid">
-        <div class="metric-card">
-            <div class="metric-lbl">Target Focus</div>
-            <div class="metric-num" style="font-size:1.15rem; color:#93c5fd;">{roadmap.get('role', 'Learner')}</div>
+    # Collect all skills targeted across the roadmap
+    target_skills = []
+    for phase in roadmap.get("phases", []):
+        for node in phase.get("nodes", []):
+            for s in (node.get("skills") or []):
+                if s not in target_skills:
+                    target_skills.append(s)
+
+    identified_gaps = [s for s in target_skills if s not in known_skills]
+    
+    st.markdown("""
+    <div class="skill-gap-card">
+        <div class="skill-gap-header">
+            <div class="skill-gap-title">Learner Diagnostic & Skill Gap Map</div>
+            <div style="font-size:0.82rem; color:#94A3B8;">Paced for <strong>""" + str(profile.get('weekly_hours', 15)) + """ hrs/week</strong> (Level: """ + str(profile.get('experience_level', 'Intermediate')) + """)</div>
         </div>
-        <div class="metric-card">
-            <div class="metric-lbl">Total Milestones</div>
-            <div class="metric-num">{stats['total_nodes']} Modules</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-lbl">Completed</div>
-            <div class="metric-num" style="color:#34d399;">{stats['completed_count']} of {stats['total_nodes']}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-lbl">Curriculum Mastery</div>
-            <div class="metric-num">{stats['progress_pct']}%</div>
-        </div>
-    </div>
     """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("<strong style='font-size:0.85rem; color:#94A3B8;'>CURRENT BASELINE:</strong>", unsafe_allow_html=True)
+        if known_skills:
+            for s in list(known_skills)[:4]:
+                st.markdown(f"""
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
+                    <span>{s}</span>
+                    <span style="color:#34D399; font-weight:600;">Verified Mastered</span>
+                </div>
+                """, unsafe_allow_html=True)
+                st.progress(0.85)
+        else:
+            st.caption("No prior skills declared (Foundational beginner track).")
+
+    with col2:
+        st.markdown("<strong style='font-size:0.85rem; color:#94A3B8;'>IDENTIFIED GAPS TO BRIDGE:</strong>", unsafe_allow_html=True)
+        if identified_gaps:
+            for s in identified_gaps[:4]:
+                st.markdown(f"""
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
+                    <span>{s}</span>
+                    <span style="color:#60A5FA; font-weight:500;">Gap Target</span>
+                </div>
+                """, unsafe_allow_html=True)
+                st.progress(0.20)
+        else:
+            st.caption("All targeted skills align with your baseline.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
+    """Renders the prominent 'Next Best Action' recommendation block."""
+    next_action_res = find_next_recommended_action(roadmap, completed_nodes)
+
+    if next_action_res:
+        next_node, next_phase = next_action_res
+        st.markdown(f"""
+        <div class="next-action-card">
+            <div class="next-action-badge">▶ Next Best Action</div>
+            <div class="next-action-title">{next_node.get('id')}: {next_node.get('title')}</div>
+            <div class="next-action-meta">
+                <strong>{next_node.get('duration', '2 weeks')}</strong> · {next_node.get('type', 'Course')} · <em>{next_node.get('provider', 'Online')}</em> · {next_phase}
+            </div>
+            <div class="next-action-why">
+                <strong>Why PathFinder recommended this now:</strong> {next_node.get('why', 'Prerequisites are unlocked. Completing this milestone directly closes an identified skill gap.')}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown("""
+        <div class="next-action-card" style="border-color:#059669; border-left-color:#059669;">
+            <div class="next-action-badge" style="color:#34D399;">✓ Curriculum Completed</div>
+            <div class="next-action-title">All Milestones Mastered!</div>
+            <div class="next-action-meta">You have completed all prerequisite pathways in this personalized curriculum.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_node_inspector(node: Dict[str, Any], score: int, breakdown: List[str]) -> None:
-    """Renders the refined Explainable AI 'Why' inspector card."""
-    skills_tags = " ".join([f"<span class='tag tag-blue'>#{s}</span>" for s in node.get("skills", [])])
+    """Renders a clean module rationale inspector near the roadmap."""
     prereqs_str = ", ".join(node.get("prereqs", [])) if node.get("prereqs") else "None (Entry Point)"
-    
+    skills_str = " · ".join(node.get("skills", ["General"]))
+
     st.markdown(f"""
-    <div class="inspector-panel">
+    <div class="node-inspector-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <div style="font-family:'Outfit',sans-serif; font-size:1.15rem; font-weight:700; color:#818cf8;">
-                Module Rationale: {node.get('id')}: {node.get('title')}
-            </div>
-            <span class="tag tag-emerald" style="font-size:0.8rem; padding:4px 10px;">{score}% Match Score</span>
+            <strong style="font-family:'Outfit',sans-serif; font-size:1.1rem; color:#F8FAFC;">
+                {node.get('id')}: {node.get('title')}
+            </strong>
+            <span class="status-tag status-active">{score}% Match Score</span>
         </div>
-        <p style="font-size:0.92rem; color:#cbd5e1; margin:8px 0 12px 0; line-height:1.55;">
-            <strong>Pedagogical Value:</strong> {node.get('why', 'Core required competency on this learning path.')}
-        </p>
-        <div style="margin-bottom:10px;">
-            <span class="tag tag-amber">⏱️ {node.get('duration', '2 weeks')}</span>
-            <span class="tag tag-indigo">🏢 {node.get('provider', 'Online')}</span>
-            <span class="tag tag-slate">Prerequisites: {prereqs_str}</span>
+        <div style="font-size:0.85rem; color:#94A3B8; margin-bottom:10px;">
+            {node.get('provider', 'Online')} · {node.get('duration', '2 weeks')} · Prerequisites: <strong>{prereqs_str}</strong>
         </div>
-        <div>
-            <span style="font-size:0.8rem; color:#94a3b8; margin-right:6px;">Target Competencies:</span>
-            {skills_tags}
+        <div style="font-size:0.9rem; color:#CBD5E1; line-height:1.5; margin-bottom:10px;">
+            <strong>Why This Module:</strong> {node.get('why', 'Key required competency.')}
+        </div>
+        <div style="font-size:0.82rem; color:#94A3B8;">
+            <strong>Target Competencies:</strong> {skills_str}
         </div>
     </div>
     """, unsafe_allow_html=True)
-    
-    with st.expander("View 3-Factor Relevance Scoring Breakdown", expanded=False):
-        st.progress(score / 100, text=f"Total Alignment: {score}/100")
-        for line in breakdown:
-            st.caption(f"• {line}")
