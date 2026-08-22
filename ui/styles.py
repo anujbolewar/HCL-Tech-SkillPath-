@@ -1,443 +1,767 @@
-"""Restrained, editorial light-mode design system for PathFinder AI.
+"""Editorial, premium learning navigation design system for PathFinder AI.
 
 Palette:
-- Canvas: #F7F7F5
-- Primary Surface: #FFFFFF
-- Secondary Surface: #F1F2F0
-- Primary Text: #171717
-- Secondary Text: #666666
-- Muted: #8A8A8A
-- Borders: #E5E5E2
-- Primary Accent: #2563EB
-- Accent Hover: #1D4ED8
-- Success: #15803D
-- Warning: #B45309
-- Locked: #A3A3A3
+- Canvas: Warm Ivory #F7F6F2 (Subtle section: #F1F0EB)
+- Surface: Pure White #FFFFFF
+- Primary Ink: #111111
+- Secondary Ink: #4B4B4B
+- Muted Ink: #858585
+- Border: #DDDCD6
+- Subtle Border: #EAE9E4
+- Primary Path Accent: Deep Cobalt #2457D6 (Highlight: #4A78E8, Deep: #173B8F)
+- Success: Muted Forest #2F7D5A
+- Warning / Attention: Warm Amber #C58A35
 """
 
 CUSTOM_CSS = """
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Global canvas */
+    :root {
+        --pf-canvas: #F7F6F2;
+        --pf-canvas-subtle: #F1F0EB;
+        --pf-surface: #FFFFFF;
+        --pf-ink: #111111;
+        --pf-ink-secondary: #4B4B4B;
+        --pf-ink-muted: #858585;
+        --pf-border: #DDDCD6;
+        --pf-border-subtle: #EAE9E4;
+        --pf-blue: #2457D6;
+        --pf-blue-highlight: #4A78E8;
+        --pf-blue-deep: #173B8F;
+        --pf-green: #2F7D5A;
+        --pf-green-bg: #F2F7F4;
+        --pf-amber: #C58A35;
+        --pf-amber-bg: #FDF9F2;
+        --pf-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        --pf-font-serif: 'DM Serif Display', Georgia, serif;
+        --pf-font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* Global Warm Ivory Canvas */
     .stApp {
-        background-color: #F7F7F5 !important;
-        color: #171717 !important;
+        background-color: var(--pf-canvas) !important;
+        color: var(--pf-ink) !important;
     }
 
     /* Targeted typography without breaking Streamlit material icon fonts */
-    .stMarkdown p, .stMarkdown span, .stMarkdown div, 
-    .app-header, .content-card, .next-action-card, .milestone-item, .node-inspector-box {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    .stMarkdown p, .stMarkdown span, .stMarkdown div,
+    .pf-header, .pf-card, .pf-next-card, .pf-milestone, .pf-inspector,
+    .pf-track-item, .pf-assessment-box, .pf-notification {
+        font-family: var(--pf-font-sans);
+        color: var(--pf-ink);
+    }
+
+    /* Editorial serif classes */
+    .pf-serif-headline {
+        font-family: var(--pf-font-serif) !important;
+        font-weight: 400 !important;
+        letter-spacing: -0.01em !important;
+        color: var(--pf-ink) !important;
+        line-height: 1.15 !important;
+    }
+
+    .pf-serif-accent {
+        font-family: var(--pf-font-serif) !important;
+        font-style: italic !important;
+        color: var(--pf-blue) !important;
     }
 
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Inter', sans-serif !important;
+        font-family: var(--pf-font-sans) !important;
         letter-spacing: -0.02em;
         font-weight: 650 !important;
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
     }
 
-    h1 { font-size: 24px !important; }
-    h2 { font-size: 19px !important; }
+    h1 { font-size: 26px !important; }
+    h2 { font-size: 20px !important; }
     h3 { font-size: 16px !important; font-weight: 600 !important; }
     h4 { font-size: 14px !important; font-weight: 600 !important; }
 
     code, pre {
-        font-family: 'JetBrains Mono', monospace !important;
+        font-family: var(--pf-font-mono) !important;
     }
 
-    /* Streamlit block container optimization */
+    /* Streamlit block container optimization: Max readable width 1260px */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0.75rem !important;
         padding-bottom: 2.5rem !important;
-        max-width: 1280px !important;
+        max-width: 1260px !important;
     }
 
-    /* Sidebar: Clean White Learner Panel */
+    /* =========================================================
+       SIDEBAR: QUIET NAVIGATION RAIL (#FFFFFF, BORDER #DDDCD6)
+       ========================================================= */
     section[data-testid="stSidebar"] {
         background-color: #FFFFFF !important;
-        border-right: 1px solid #E5E5E2 !important;
+        border-right: 1px solid var(--pf-border) !important;
+        box-shadow: none !important;
     }
     
     section[data-testid="stSidebar"] .block-container {
         padding-top: 1.25rem !important;
+        padding-left: 1.25rem !important;
+        padding-right: 1.25rem !important;
     }
 
     section[data-testid="stSidebar"] h3, 
     section[data-testid="stSidebar"] h4 {
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
     }
 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] p,
     section[data-testid="stSidebar"] span:not([class*="material"]),
     section[data-testid="stSidebar"] summary {
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
     }
 
-    /* Compact Application Header (56px) */
-    .app-header {
+    .pf-sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--pf-border-subtle);
+    }
+
+    .pf-sidebar-brand-name {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--pf-ink);
+    }
+
+    .pf-sidebar-tag {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--pf-ink-muted);
+        margin-bottom: 4px;
+    }
+
+    /* =========================================================
+       APPLICATION HEADER (56px, WARM IVORY #F7F6F2, BORDER #DDDCD6)
+       ========================================================= */
+    .pf-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 12px 18px;
-        background: #FFFFFF;
-        border: 1px solid #E5E5E2;
+        height: 56px;
+        padding: 0 16px;
+        background: var(--pf-canvas);
+        border: 1px solid var(--pf-border);
         border-radius: 8px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        margin-bottom: 20px;
     }
 
-    .app-brand {
+    .pf-header-left {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 18px;
+        gap: 12px;
+    }
+
+    .pf-logo-mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+    }
+
+    .pf-logo-text {
+        font-size: 17px;
         font-weight: 650;
-        color: #171717;
+        color: var(--pf-ink);
+        letter-spacing: -0.02em;
+    }
+
+    .pf-logo-sub {
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--pf-blue);
+        background: #EFF4FE;
+        border: 1px solid #D6E4FC;
+        padding: 1px 5px;
+        border-radius: 3px;
+        letter-spacing: 0.04em;
+    }
+
+    .pf-header-center {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12.5px;
+        color: var(--pf-ink-secondary);
+        background: var(--pf-surface);
+        padding: 4px 12px;
+        border: 1px solid var(--pf-border-subtle);
+        border-radius: 4px;
+    }
+
+    .pf-header-right {
+        font-size: 12px;
+        color: var(--pf-ink-muted);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pf-header-right strong {
+        color: var(--pf-ink);
+        font-weight: 600;
+    }
+
+    /* =========================================================
+       EDITORIAL HERO & GOAL INTAKE BLOCK
+       ========================================================= */
+    .pf-editorial-intake {
+        margin-bottom: 22px;
+    }
+
+    .pf-editorial-title {
+        font-family: var(--pf-font-serif);
+        font-size: 32px;
+        line-height: 1.2;
+        color: var(--pf-ink);
+        margin-bottom: 6px;
         letter-spacing: -0.01em;
     }
 
-    .app-brand .ai-tag {
-        font-size: 11px;
-        font-weight: 600;
-        background: #F1F2F0;
-        color: #2563EB;
-        padding: 2px 6px;
-        border-radius: 4px;
-        border: 1px solid #E5E5E2;
-        letter-spacing: 0.02em;
+    .pf-editorial-meta {
+        font-size: 13px;
+        color: var(--pf-ink-secondary);
+        margin-bottom: 14px;
     }
 
-    .app-badge {
+    .pf-editorial-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--pf-ink-muted);
+        margin-bottom: 8px;
+    }
+
+    /* =========================================================
+       RESTRAINED EDITORIAL CARDS & SECTIONS
+       ========================================================= */
+    .pf-card {
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-border);
+        border-radius: 8px;
+        padding: 20px 22px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(20, 20, 20, 0.02);
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    .pf-card:hover {
+        border-color: #CFCFC9;
+        box-shadow: 0 4px 18px rgba(20, 20, 20, 0.04);
+    }
+
+    .pf-section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--pf-border-subtle);
+    }
+
+    .pf-section-title {
         font-size: 12px;
-        background: #F1F2F0;
-        border: 1px solid #E5E5E2;
-        color: #404040;
-        padding: 3px 10px;
-        border-radius: 6px;
+        font-weight: 650;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--pf-ink-muted);
+    }
+
+    .pf-section-caption {
+        font-size: 12.5px;
+        color: var(--pf-ink-secondary);
+    }
+
+    /* =========================================================
+       SKILL POSITION: CURRENT → TARGET TRACK VISUALIZATION
+       ========================================================= */
+    .pf-track-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pf-track-item {
+        display: grid;
+        grid-template-columns: 140px 1fr 100px;
+        align-items: center;
+        gap: 16px;
+        font-size: 13px;
+    }
+
+    .pf-track-name {
+        font-weight: 550;
+        color: var(--pf-ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pf-track-bar-bg {
+        position: relative;
+        height: 6px;
+        background: var(--pf-canvas-subtle);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .pf-track-bar-target {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: #E2E1DA;
+        border-radius: 3px;
+    }
+
+    .pf-track-bar-current {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        background: var(--pf-ink);
+        border-radius: 3px;
+        transition: width 400ms ease;
+    }
+
+    .pf-track-bar-current.is-gap {
+        background: var(--pf-blue);
+    }
+
+    .pf-track-value {
+        text-align: right;
+        font-size: 12px;
         font-weight: 500;
     }
 
-    .app-meta {
-        font-size: 12px;
-        color: #8A8A8A;
-        font-weight: 400;
-        text-align: right;
-    }
-
-    .app-meta strong {
-        color: #171717;
+    .pf-badge-mastered {
+        color: var(--pf-green);
         font-weight: 600;
     }
 
-    /* Section Cards & Panels */
-    .content-card {
-        background: #FFFFFF;
-        border: 1px solid #E5E5E2;
+    .pf-badge-gap {
+        color: var(--pf-amber);
+        font-weight: 600;
+        background: var(--pf-amber-bg);
+        border: 1px solid #F6E6CC;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+    }
+
+    /* =========================================================
+       NEXT BEST ACTION: SIGNATURE COMPONENT WITH PATH INDICATOR
+       ========================================================= */
+    .pf-next-card {
+        position: relative;
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-border);
         border-radius: 8px;
-        padding: 18px 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        padding: 20px 24px;
+        margin-bottom: 18px;
+        box-shadow: 0 3px 12px rgba(20, 20, 20, 0.03);
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }
 
-    .card-header-label {
-        font-size: 12px;
-        font-weight: 600;
+    .pf-next-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 14px;
+        bottom: 14px;
+        width: 3.5px;
+        background: var(--pf-blue);
+        border-radius: 0 2px 2px 0;
+        transition: top 180ms ease, bottom 180ms ease, width 180ms ease;
+    }
+
+    .pf-next-card:hover {
+        border-color: #C5C5BF;
+        box-shadow: 0 6px 20px rgba(20, 20, 20, 0.05);
+    }
+
+    .pf-next-card:hover::before {
+        top: 8px;
+        bottom: 8px;
+        width: 4.5px;
+    }
+
+    .pf-next-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .pf-next-step-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 650;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #8A8A8A;
+        letter-spacing: 0.08em;
+        color: var(--pf-blue);
+    }
+
+    .pf-next-step-badge .pf-num {
+        font-family: var(--pf-font-mono);
+        font-size: 11px;
+        background: #EFF4FE;
+        border: 1px solid #D6E4FC;
+        padding: 1px 5px;
+        border-radius: 3px;
+    }
+
+    .pf-next-duration {
+        font-size: 12px;
+        color: var(--pf-ink-muted);
+        background: var(--pf-canvas);
+        border: 1px solid var(--pf-border-subtle);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+
+    .pf-next-title {
+        font-size: 18px;
+        font-weight: 650;
+        color: var(--pf-ink);
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+    }
+
+    .pf-next-provider {
+        font-size: 13px;
+        color: var(--pf-ink-secondary);
         margin-bottom: 12px;
     }
 
-    /* Next Best Action / Next Up Card */
-    .next-action-card {
-        background: #FFFFFF;
-        border: 1px solid #E5E5E2;
-        border-left: 3px solid #2563EB;
+    .pf-next-gaps-block {
+        font-size: 12.5px;
+        color: var(--pf-ink-secondary);
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+
+    .pf-next-gaps-block strong {
+        color: var(--pf-ink);
+    }
+
+    .pf-next-why-box {
+        background: var(--pf-canvas);
+        border: 1px solid var(--pf-border-subtle);
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: var(--pf-ink-secondary);
+        line-height: 1.5;
+    }
+
+    .pf-next-why-box strong {
+        color: var(--pf-ink);
+        font-weight: 600;
+    }
+
+    /* =========================================================
+       PATH UPDATED EDITORIAL NOTIFICATION (ADAPTIVE REPLANNING)
+       ========================================================= */
+    .pf-notification {
+        position: relative;
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-border);
+        border-left: 3.5px solid var(--pf-amber);
         border-radius: 8px;
         padding: 16px 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(197, 138, 53, 0.04);
+        animation: pfFadeSlideUp 300ms ease forwards;
     }
 
-    .next-action-badge {
+    .pf-notif-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: #2563EB;
-        margin-bottom: 4px;
-    }
-
-    .next-action-title {
-        font-size: 17px;
-        font-weight: 650;
-        color: #171717;
-        margin-bottom: 4px;
-        letter-spacing: -0.01em;
-    }
-
-    .next-action-meta {
-        font-size: 13px;
-        color: #666666;
-        margin-bottom: 10px;
-    }
-
-    .next-action-why {
-        font-size: 13px;
-        color: #404040;
-        line-height: 1.5;
-        background: #F7F7F5;
-        padding: 10px 14px;
-        border-radius: 6px;
-        border: 1px solid #E5E5E2;
-    }
-
-    /* Path Updated Banner (Adaptive Replanning) */
-    .path-updated-banner {
-        background: #F0F7FF;
-        border: 1px solid #BFDBFE;
-        border-left: 3px solid #2563EB;
-        border-radius: 8px;
-        padding: 14px 18px;
-        margin-bottom: 16px;
-        font-size: 13px;
-        color: #1E3A8A;
-        line-height: 1.5;
-    }
-
-    .path-updated-title {
-        font-size: 13px;
         font-weight: 650;
         text-transform: uppercase;
-        letter-spacing: 0.03em;
-        color: #1D4ED8;
-        margin-bottom: 4px;
+        letter-spacing: 0.08em;
+        color: var(--pf-amber);
+        margin-bottom: 6px;
     }
 
-    /* Status Tags */
-    .status-tag {
-        display: inline-block;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 500;
+    .pf-notif-tag::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        background: var(--pf-amber);
+        border-radius: 50%;
     }
 
-    .status-active {
-        background: #EFF6FF;
-        color: #1D4ED8;
-        border: 1px solid #DBEAFE;
+    .pf-notif-body {
+        font-size: 13px;
+        color: var(--pf-ink-secondary);
+        line-height: 1.55;
     }
 
-    .status-completed {
-        background: #F0FDF4;
-        color: #15803D;
-        border: 1px solid #DCFCE7;
+    .pf-notif-body strong {
+        color: var(--pf-ink);
     }
 
-    .status-locked {
-        background: #F1F2F0;
-        color: #8A8A8A;
-        border: 1px solid #E5E5E2;
+    /* =========================================================
+       BUTTONS & INK CONTROLS
+       ========================================================= */
+    /* Primary: Black/Ink Button (#111111 -> Hover Deep Cobalt #2457D6) */
+    .stButton > button[kind="primary"] {
+        background-color: var(--pf-ink) !important;
+        border: 1px solid var(--pf-ink) !important;
+        color: #FFFFFF !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        height: 42px !important;
+        transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease !important;
+    }
+
+    .stButton > button[kind="primary"]:hover {
+        background-color: var(--pf-blue) !important;
+        border-color: var(--pf-blue) !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px);
+    }
+
+    /* Secondary: Clean Surface Button */
+    .stButton > button,
+    .stDownloadButton > button {
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
+        color: var(--pf-ink) !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        height: 40px !important;
+        transition: background-color 150ms ease, border-color 150ms ease !important;
+    }
+
+    .stButton > button:hover,
+    .stDownloadButton > button:hover {
+        background-color: var(--pf-canvas-subtle) !important;
+        border-color: #C5C5BF !important;
+        color: var(--pf-ink) !important;
+    }
+
+    /* Disabled state for locked milestones */
+    .stButton > button:disabled,
+    .stButton > button[disabled] {
+        background-color: var(--pf-canvas-subtle) !important;
+        border-color: var(--pf-border) !important;
+        color: var(--pf-ink-muted) !important;
+        cursor: not-allowed !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     /* Form Controls & Baseline Locks */
     .stTextInput > div > div > input,
     .stSelectbox > div > div,
     .stMultiSelect > div > div {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
         border-radius: 6px !important;
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
         font-size: 14px !important;
         height: 42px !important;
     }
 
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div:focus {
-        border-color: #2563EB !important;
-        box-shadow: 0 0 0 1px #2563EB !important;
+        border-color: var(--pf-blue) !important;
+        box-shadow: 0 0 0 1px var(--pf-blue) !important;
     }
 
-    /* Primary & Secondary Buttons */
-    .stButton > button,
-    .stDownloadButton > button {
-        border-radius: 6px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        height: 42px !important;
-        transition: background-color 150ms ease, border-color 150ms ease !important;
-        border: 1px solid #E5E5E2 !important;
-        background-color: #FFFFFF !important;
-        color: #171717 !important;
-    }
-
-    .stButton > button:hover,
-    .stDownloadButton > button:hover {
-        background-color: #F1F2F0 !important;
-        border-color: #D4D4D0 !important;
-        color: #171717 !important;
-    }
-
-    .stButton > button[kind="primary"] {
-        background-color: #2563EB !important;
-        border-color: #2563EB !important;
-        color: #FFFFFF !important;
-        font-weight: 600 !important;
-    }
-
-    .stButton > button[kind="primary"]:hover {
-        background-color: #1D4ED8 !important;
-        border-color: #1D4ED8 !important;
-        color: #FFFFFF !important;
-    }
-
-    /* Clean Light Mode Streamlit Pills */
+    /* Clean Streamlit Pills */
     [data-testid="stPills"] {
         gap: 8px !important;
     }
 
     [data-testid="stPills"] button {
         background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
+        border: 1px solid #DDDCD6 !important;
         border-radius: 20px !important;
         font-size: 12px !important;
-        color: #404040 !important;
+        color: #4B4B4B !important;
         padding: 3px 12px !important;
+        transition: all 150ms ease !important;
     }
 
     [data-testid="stPills"] button span,
     [data-testid="stPills"] button p {
-        color: #404040 !important;
+        color: #4B4B4B !important;
         font-size: 12px !important;
     }
 
     [data-testid="stPills"] button:hover {
-        background-color: #F1F2F0 !important;
-        border-color: #D4D4D0 !important;
+        background-color: var(--pf-canvas-subtle) !important;
+        border-color: #C5C5BF !important;
     }
 
     [data-testid="stPills"] button[aria-selected="true"] {
-        background-color: #EFF6FF !important;
-        border-color: #BFDBFE !important;
+        background-color: #EFF4FE !important;
+        border-color: #D6E4FC !important;
     }
 
     [data-testid="stPills"] button[aria-selected="true"] span,
     [data-testid="stPills"] button[aria-selected="true"] p {
-        color: #1D4ED8 !important;
+        color: #2457D6 !important;
         font-weight: 600 !important;
     }
 
-    /* Restrained Clean Tabs */
+    /* =========================================================
+       EDITORIAL TABS (OVERVIEW / LEARNING PATH / PROGRESS / MENTOR)
+       ========================================================= */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 24px !important;
+        gap: 32px !important;
         background-color: transparent !important;
-        border-bottom: 1px solid #E5E5E2 !important;
+        border-bottom: 1px solid var(--pf-border) !important;
         padding-bottom: 0px !important;
-        margin-bottom: 18px !important;
+        margin-bottom: 20px !important;
     }
 
-    .stTabs [data-baseweb="tab"] {
+    .stTabs [data-baseweb="tab"],
+    .stTabs [data-baseweb="tab"] div,
+    .stTabs [data-baseweb="tab"] p,
+    .stTabs [data-baseweb="tab"] span {
         background-color: transparent !important;
         border: none !important;
         border-radius: 0px !important;
         padding: 8px 4px 12px 4px !important;
         font-size: 14px !important;
-        font-weight: 500 !important;
-        color: #666666 !important;
+        font-weight: 550 !important;
+        color: #4B4B4B !important;
         box-shadow: none !important;
+        transition: color 150ms ease !important;
     }
 
-    .stTabs [data-baseweb="tab"]:hover {
-        color: #171717 !important;
+    .stTabs [data-baseweb="tab"]:hover,
+    .stTabs [data-baseweb="tab"]:hover div,
+    .stTabs [data-baseweb="tab"]:hover p,
+    .stTabs [data-baseweb="tab"]:hover span {
+        color: var(--pf-ink) !important;
     }
 
-    .stTabs [aria-selected="true"] {
-        color: #2563EB !important;
-        font-weight: 600 !important;
-        border-bottom: 2px solid #2563EB !important;
+    .stTabs [data-baseweb="tab"][aria-selected="true"],
+    .stTabs [data-baseweb="tab"][aria-selected="true"] div,
+    .stTabs [data-baseweb="tab"][aria-selected="true"] p,
+    .stTabs [data-baseweb="tab"][aria-selected="true"] span {
+        color: var(--pf-ink) !important;
+        font-weight: 700 !important;
+        border-bottom: 2px solid var(--pf-ink) !important;
     }
 
-    /* Expanders */
-    .streamlit-expanderHeader {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
-        border-radius: 6px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        color: #171717 !important;
-    }
-
-    .streamlit-expanderContent {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
-        border-top: none !important;
-        border-radius: 0 0 6px 6px !important;
-    }
-
-    /* Milestone Progression Cards */
-    .milestone-item {
-        background: #FFFFFF;
-        border: 1px solid #E5E5E2;
+    /* =========================================================
+       MILESTONES & NODE INSPECTOR
+       ========================================================= */
+    .pf-milestone {
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-border);
         border-radius: 8px;
-        padding: 14px 18px;
-        margin-bottom: 10px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
         transition: border-color 150ms ease;
     }
 
-    .milestone-item:hover {
-        border-color: #D4D4D0;
+    .pf-milestone:hover {
+        border-color: #C5C5BF;
     }
 
-    .milestone-item-completed {
-        border-left: 3px solid #15803D;
+    .pf-milestone-completed {
+        border-left: 3.5px solid var(--pf-green);
     }
 
-    .milestone-item-ready {
-        border-left: 3px solid #2563EB;
+    .pf-milestone-ready {
+        border-left: 3.5px solid var(--pf-blue);
     }
 
-    .milestone-item-locked {
-        border-left: 3px solid #E5E5E2;
-        opacity: 0.75;
+    .pf-milestone-locked {
+        border-left: 3.5px solid var(--pf-border);
+        opacity: 0.7;
     }
 
-    /* Node Inspector Panel */
-    .node-inspector-box {
-        background: #FFFFFF;
-        border: 1px solid #E5E5E2;
+    .pf-inspector {
+        background: var(--pf-surface);
+        border: 1px solid var(--pf-border);
         border-radius: 8px;
-        padding: 16px;
+        padding: 18px;
         font-size: 13px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        box-shadow: 0 2px 8px rgba(20, 20, 20, 0.02);
     }
 
-    /* Chat Messages & Inputs */
+    /* =========================================================
+       CHAT & MENTOR STYLES
+       ========================================================= */
     [data-testid="stChatMessage"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
         border-radius: 8px !important;
-        padding: 12px 16px !important;
-        margin-bottom: 8px !important;
+        padding: 14px 18px !important;
+        margin-bottom: 10px !important;
         font-size: 13.5px !important;
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
+        line-height: 1.55 !important;
     }
 
     [data-testid="stChatInput"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #E5E5E2 !important;
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
         border-radius: 8px !important;
     }
 
     [data-testid="stChatInput"] textarea {
-        color: #171717 !important;
+        color: var(--pf-ink) !important;
         font-size: 13.5px !important;
     }
 
-    /* Remove Streamlit default decorative headers */
+    /* =========================================================
+       MOTION SYSTEM & ANIMATIONS
+       ========================================================= */
+    @keyframes pfFadeSlideUp {
+        0% {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .pf-animate-fade {
+        animation: pfFadeSlideUp 220ms ease forwards;
+    }
+
+    /* Accessibility: Respect Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+        *, ::before, ::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+
+    /* Remove Streamlit default decorative elements */
     #MainMenu, footer, header {
         visibility: hidden;
     }
@@ -445,6 +769,6 @@ CUSTOM_CSS = """
 """
 
 def inject_custom_styles() -> None:
-    """Injects the light-mode editorial stylesheet into the active Streamlit app."""
+    """Injects the editorial light-mode design system into the active Streamlit session."""
     import streamlit as st
     st.markdown(CUSTOM_CSS, unsafe_allow_html=True)

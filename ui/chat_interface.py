@@ -1,6 +1,7 @@
 """Conversational AI Mentor chat interface with structured learning coach responses."""
 
 import os
+import html
 from typing import Dict, Any, Set, List, Optional
 import streamlit as st
 
@@ -10,10 +11,10 @@ from engine.gemini_engine import stream_gemini_chat_response, HAS_GEMINI
 from engine.llm_router import generate_offline_streaming_mentor_reply
 
 SUGGESTED_PROMPTS = [
-    "Today's Study Focus",
-    "Why Roadmap Changed",
-    "Explain Skill Gaps",
-    "Weekly Study Plan"
+    "What should I study today?",
+    "Why is this next on my path?",
+    "Explain my skill gaps",
+    "Adjust my plan for 1 hour"
 ]
 
 def build_mentor_system_prompt(
@@ -55,14 +56,14 @@ def build_mentor_system_prompt(
 
     roadmap_context = "\n".join(ctx_lines)
 
-    return f"""You are PathFinder Mentor by Team Cortex — a precise, pragmatic learning coach.
+    return f"""You are PathFinder Mentor by Team Cortex — an editorial learning advisor and coach.
 The student's complete curriculum roadmap and assessment history is provided below. Answer queries strictly anchored in this roadmap context.
 
 {roadmap_context}
 
 RULES:
 1. Reference specific module IDs (e.g. "AI101", "REM101", "AI302") and titles when guiding.
-2. Structure responses cleanly with uppercase section labels where helpful (e.g. TODAY'S FOCUS, WHY, NEXT STEP).
+2. Structure responses cleanly with uppercase section labels: TODAY, WHY, NEXT.
 3. If asked why the roadmap changed, explain the assessment score and why the remedial milestones were inserted.
 4. Keep responses concise, professional, and practical (under 120 words).
 5. Never use emojis or decorative symbols.
@@ -79,12 +80,18 @@ def render_ai_mentor_chat(
     gemini_api_key: str = "",
     adaptation_event: Optional[Dict[str, Any]] = None
 ) -> None:
-    """Renders the PathFinder Mentor conversational window in clean light mode."""
-    st.markdown("### Mentor")
-    st.caption("Context-aware learning coach grounded in your active roadmap and prerequisite progression.")
+    """Renders the PathFinder Mentor conversational window with understated action links."""
+    st.markdown("""
+    <div style="font-size:12px; font-weight:650; text-transform:uppercase; letter-spacing:0.08em; color:#858585; margin-bottom:4px;">
+        PathFinder Mentor
+    </div>
+    <div style="font-size:13px; color:#4B4B4B; margin-bottom:14px;">
+        Context-aware learning advisor grounded in your active roadmap and prerequisite progression.
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Contextual action chips
-    st.markdown("<div style='margin-bottom:8px;'>", unsafe_allow_html=True)
+    # Action prompt links
+    st.markdown("<div style='margin-bottom:10px;'>", unsafe_allow_html=True)
     chip_cols = st.columns(len(SUGGESTED_PROMPTS))
     prompt_to_send = None
     for idx, prompt_text in enumerate(SUGGESTED_PROMPTS):

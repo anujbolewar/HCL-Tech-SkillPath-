@@ -1,115 +1,157 @@
-"""Presentation components for PathFinder AI with restrained typography and spatial discipline."""
+"""Editorial, restrained UI presentation components for PathFinder AI."""
 
-from typing import Dict, Any, List, Set, Optional, Tuple
+import html
+from typing import Dict, Any, List, Set, Optional
 import streamlit as st
 
-from core.config import APP_TITLE, TEAM_NAME
+from core.config import TEAM_NAME
 from engine.re_router import (
-    calculate_progress_stats,
-    get_node_status,
     find_next_recommended_action,
     apply_diagnostic_assessment,
+    get_node_status
 )
+from core.state import persist_state
 
-def clean_html(html_str: str) -> str:
-    """Strips all leading and trailing whitespace from each line to prevent Markdown codeblock parsing."""
-    return "\n".join([line.strip() for line in html_str.strip().splitlines()])
+def clean_html(raw_html: str) -> str:
+    """Removes indentation and excess newlines from raw HTML strings."""
+    return "".join(line.strip() for line in raw_html.strip().splitlines())
 
-
-def render_app_header(role_title: str = "Personalized Curriculum") -> None:
-    """Renders a compact, professional application header (56px tall) in clean light mode."""
-    raw_html = f"""
-    <div class="app-header">
-        <div class="app-brand">
-            PathFinder <span class="ai-tag">AI</span>
-            <span class="app-badge">{role_title}</span>
+def render_app_header(role_title: str = "AI & ML Engineer") -> None:
+    """Renders the editorial 56px application header with minimal SVG path mark."""
+    escaped_role = html.escape(role_title)
+    
+    # PathFinder minimal connected-nodes path mark
+    path_mark_svg = """
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="5" cy="18" r="3" fill="#2457D6"/>
+        <circle cx="12" cy="6" r="3" fill="#111111"/>
+        <circle cx="19" cy="14" r="3" fill="#2F7D5A"/>
+        <path d="M7 16L10 8M14 8L17 12" stroke="#DDDCD6" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    """
+    
+    header_html = f"""
+    <div class="pf-header">
+        <div class="pf-header-left">
+            <div class="pf-logo-mark">{path_mark_svg}</div>
+            <span class="pf-logo-text">PathFinder</span>
+            <span class="pf-logo-sub">AI</span>
         </div>
-        <div class="app-meta">
-            <strong>Cortex</strong> · HCL Tech Hackathon
+        <div class="pf-header-center">
+            <span style="color:#858585; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.06em;">Goal:</span>
+            <strong style="color:#111111; font-weight:600;">{escaped_role}</strong>
+        </div>
+        <div class="pf-header-right">
+            <span>Team <strong>{TEAM_NAME}</strong> · Round 2</span>
         </div>
     </div>
     """
-    st.markdown(clean_html(raw_html), unsafe_allow_html=True)
+    st.markdown(clean_html(header_html), unsafe_allow_html=True)
 
 
 def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
-    """Renders the explicit 'Where I Am vs Where I Need To Be' skill gap comparison in editorial format."""
-    known_skills = list(set(profile.get("skills") or []))
-    
-    # Collect all skills targeted across the roadmap
-    target_skills = []
+    """Renders the signature Current → Target competency track visualization."""
+    known_skills = list(profile.get("skills", ["Python", "SQL", "Basic Math"]))
+    hours = profile.get("weekly_hours", 15)
+    level = profile.get("experience_level", "Intermediate")
+
+    all_roadmap_skills = []
     for phase in roadmap.get("phases", []):
         for node in phase.get("nodes", []):
-            for s in (node.get("skills") or []):
-                if s not in target_skills:
-                    target_skills.append(s)
+            for skill in node.get("skills", []):
+                if skill not in all_roadmap_skills and skill not in known_skills:
+                    all_roadmap_skills.append(skill)
 
-    identified_gaps = [s for s in target_skills if s not in known_skills]
+    target_gaps = all_roadmap_skills[:4] if all_roadmap_skills else ["Linear Algebra", "Multivariate Calculus", "Matrix Decompositions", "NumPy"]
 
-    # Baseline rows with neutral gray bars
-    baseline_items = []
-    if known_skills:
-        for s in known_skills[:4]:
-            baseline_items.append(f"""
-            <div style="margin-bottom: 12px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px;">
-                    <span style="color:#171717; font-weight:500;">{s}</span>
-                    <span style="color:#15803D; font-weight:500; font-size:12px;">8/10 · Mastered</span>
-                </div>
-                <div style="background:#F1F2F0; border-radius:4px; height:6px; width:100%; overflow:hidden;">
-                    <div style="background:#8A8A8A; width:80%; height:100%; border-radius:4px;"></div>
-                </div>
-            </div>
-            """)
-        baseline_html = "".join(baseline_items)
-    else:
-        baseline_html = "<div style='color:#8A8A8A; font-size:13px; padding: 8px 0;'>No baseline skills declared (Foundational beginner).</div>"
-
-    # Gaps rows with blue accent target bars
-    gaps_items = []
-    if identified_gaps:
-        for s in identified_gaps[:4]:
-            gaps_items.append(f"""
-            <div style="margin-bottom: 12px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:13px;">
-                    <span style="color:#171717; font-weight:500;">{s}</span>
-                    <span style="color:#2563EB; font-weight:500; font-size:12px;">Target (2/10)</span>
-                </div>
-                <div style="background:#F1F2F0; border-radius:4px; height:6px; width:100%; overflow:hidden;">
-                    <div style="background:#2563EB; width:20%; height:100%; border-radius:4px;"></div>
-                </div>
-            </div>
-            """)
-        gaps_html = "".join(gaps_items)
-    else:
-        gaps_html = "<div style='color:#8A8A8A; font-size:13px; padding: 8px 0;'>All targeted competencies match your baseline profile.</div>"
-
-    hours = profile.get('weekly_hours', 15)
-    exp = profile.get('experience_level', 'Intermediate')
-
-    card_html = f"""
-    <div class="content-card">
-        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; border-bottom:1px solid #E5E5E2; padding-bottom:8px;">
-            <span class="card-header-label" style="margin-bottom:0;">
-                Skill Gap Analysis
-            </span>
-            <span style="font-size:12px; color:#666666;">
-                Paced for <strong>{hours} hrs/week</strong> ({exp})
-            </span>
+    section_html = f"""
+    <div class="pf-card">
+        <div class="pf-section-header">
+            <span class="pf-section-title">Skill Position</span>
+            <span class="pf-section-caption">Paced for <strong>{hours} hrs/week</strong> ({level})</span>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 32px;">
             <div>
-                <div style="font-size:12px; font-weight:600; color:#8A8A8A; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:#858585; letter-spacing:0.06em; margin-bottom:14px;">
                     Current Baseline
                 </div>
-                {baseline_html}
+                <div class="pf-track-container">
+                    {''.join(f'''
+                    <div class="pf-track-item">
+                        <span class="pf-track-name">{html.escape(skill)}</span>
+                        <div class="pf-track-bar-bg">
+                            <div class="pf-track-bar-target" style="width: 80%;"></div>
+                            <div class="pf-track-bar-current" style="width: 80%;"></div>
+                        </div>
+                        <span class="pf-track-value pf-badge-mastered">8/10 · Mastered</span>
+                    </div>
+                    ''' for skill in known_skills[:4])}
+                </div>
             </div>
             <div>
-                <div style="font-size:12px; font-weight:600; color:#8A8A8A; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:10px;">
+                <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:#858585; letter-spacing:0.06em; margin-bottom:14px;">
                     Target Competencies & Gaps
                 </div>
-                {gaps_html}
+                <div class="pf-track-container">
+                    {''.join(f'''
+                    <div class="pf-track-item">
+                        <span class="pf-track-name">{html.escape(gap)}</span>
+                        <div class="pf-track-bar-bg">
+                            <div class="pf-track-bar-target" style="width: 80%;"></div>
+                            <div class="pf-track-bar-current is-gap" style="width: 20%;"></div>
+                        </div>
+                        <span class="pf-track-value"><span class="pf-badge-gap">Gap · 2/10</span></span>
+                    </div>
+                    ''' for gap in target_gaps)}
+                </div>
             </div>
+        </div>
+    </div>
+    """
+    st.markdown(clean_html(section_html), unsafe_allow_html=True)
+
+
+def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
+    """Renders the signature NEXT BEST ACTION card with cobalt path indicator."""
+    next_res = find_next_recommended_action(roadmap, completed_nodes)
+
+    if not next_res:
+        done_html = """
+        <div class="pf-card" style="text-align:center; padding:32px 20px;">
+            <div style="font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:0.08em; color:#2F7D5A; margin-bottom:6px;">All Milestones Mastered</div>
+            <div style="font-size:16px; font-weight:600; color:#111111; margin-bottom:6px;">You have completed all prerequisite milestones for this roadmap!</div>
+            <div style="font-size:13px; color:#4B4B4B;">Review your completed projects in the Learning Path tab or consult PathFinder Mentor for advanced specialization.</div>
+        </div>
+        """
+        st.markdown(clean_html(done_html), unsafe_allow_html=True)
+        return
+
+    next_node, phase_name = next_res
+    node_id = next_node.get("id", "01")
+    title = html.escape(next_node.get("title", "Next Action"))
+    provider = html.escape(next_node.get("provider", "Curated Source"))
+    duration = html.escape(next_node.get("duration", "2 weeks"))
+    n_type = html.escape(next_node.get("type", "Course"))
+    why_text = html.escape(next_node.get("why", "Critical path milestone for closing fundamental prerequisites."))
+    skills_list = next_node.get("skills", ["Core Concept"])
+    skills_str = " · ".join(html.escape(s) for s in skills_list)
+
+    card_html = f"""
+    <div class="pf-next-card">
+        <div class="pf-next-header-row">
+            <div class="pf-next-step-badge">
+                <span class="pf-num">01</span>
+                <span>Next Best Action</span>
+            </div>
+            <span class="pf-next-duration">{duration} · 15 hours</span>
+        </div>
+        <div class="pf-next-title">{node_id}: {title}</div>
+        <div class="pf-next-provider">{n_type} · <strong>{provider}</strong> · {phase_name}</div>
+        <div class="pf-next-gaps-block">
+            <strong>Closes identified gaps:</strong> {skills_str}
+        </div>
+        <div class="pf-next-why-box">
+            <strong>Why now:</strong> {why_text}
         </div>
     </div>
     """
@@ -117,35 +159,32 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
 
 
 def render_roadmap_updated_banner(adaptation_event: Dict[str, Any]) -> None:
-    """Renders the clean, restrained 'PATH UPDATED' inline change summary."""
+    """Renders the restrained editorial notification when adaptive replanning triggers."""
     if not adaptation_event or not adaptation_event.get("adapted"):
         return
 
-    skill = adaptation_event.get("skill_topic", "Retrieval & Vector Search")
-    score = adaptation_event.get("score", 42)
-    inserted = adaptation_event.get("inserted_nodes", [])
-    impacted = adaptation_event.get("impacted_node", "Capstone Project")
-
-    inserted_items = "".join([
-        f"<div style='margin-bottom:4px;'><strong style='color:#171717;'>{n.get('id')}: {n.get('title')}</strong> <span style='color:#666666;'>({n.get('duration', '1 week')})</span></div>"
-        for n in inserted
-    ])
+    skill = html.escape(adaptation_event.get("skill_topic", "Domain Skill"))
+    score = adaptation_event.get("score", 45)
+    
+    inserted_raw = adaptation_event.get("inserted_nodes", [])
+    if isinstance(inserted_raw, list):
+        inserted_names = [
+            f"{n['id']}: {n['title']}" if isinstance(n, dict) else str(n)
+            for n in inserted_raw
+        ]
+        inserted = html.escape(", ".join(inserted_names))
+    else:
+        inserted = html.escape(str(inserted_raw))
+        
+    reason = html.escape(adaptation_event.get("reason", "Assessment score identified prerequisite gaps."))
 
     banner_html = f"""
-    <div class="path-updated-banner">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span class="path-updated-title">Path Updated</span>
-            <span class="status-tag status-active">Assessment Score: {score}%</span>
-        </div>
-        <div style="font-size:13.5px; color:#171717; margin-bottom:10px; line-height:1.5;">
-            Your diagnostic check identified a prerequisite gap in <strong>{skill}</strong>. PathFinder dynamically updated your learning sequence with foundational coursework:
-        </div>
-        <div style="background:#FFFFFF; border:1px solid #BFDBFE; border-radius:6px; padding:10px 14px; margin-bottom:8px; font-size:13px;">
-            <div style="font-size:11px; font-weight:600; text-transform:uppercase; color:#2563EB; margin-bottom:6px; letter-spacing:0.03em;">Added to your path:</div>
-            {inserted_items}
-        </div>
-        <div style="font-size:12px; color:#1E3A8A;">
-            These newly inserted modules now unlock <strong>{impacted}</strong>.
+    <div class="pf-notification">
+        <div class="pf-notif-tag">Path Updated</div>
+        <div class="pf-notif-body">
+            Your assessment identified a weakness in <strong>{skill}</strong> ({score}% score).<br/>
+            <strong>Added to path:</strong> {inserted}<br/>
+            <strong>Reason:</strong> {reason}
         </div>
     </div>
     """
@@ -153,151 +192,96 @@ def render_roadmap_updated_banner(adaptation_event: Dict[str, Any]) -> None:
 
 
 def render_diagnostic_assessment_widget(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
-    """Renders a realistic Skill Check assessment experience to test the adaptive learning loop."""
-    from core.state import persist_state
-
+    """Renders a realistic multiple-choice skill check with instant adaptation demo."""
     with st.expander("Skill Check & Diagnostic Assessment", expanded=False):
-        st.markdown(
-            "<div style='font-size:13px; color:#666666; margin-bottom:12px;'>"
-            "Assess your competency in key domain prerequisites. If a foundational weakness is detected, "
-            "PathFinder automatically re-sequences your learning path."
-            "</div>",
-            unsafe_allow_html=True
+        st.markdown("""
+        <div style="font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:0.08em; color:#858585; margin-bottom:4px;">
+            Skill Check · Retrieval & Vector Search
+        </div>
+        <div style="font-size:13px; color:#4B4B4B; margin-bottom:14px;">
+            Test your current mastery to let PathFinder dynamically verify prerequisites and tailor your roadmap.
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("**Question 1 of 3:** Which retrieval strategy is most appropriate when semantic similarity alone misses exact technical identifiers or SKU codes?")
+
+        selected_option = st.radio(
+            "Select Answer:",
+            [
+                "A. Standard cosine similarity over Dense Embeddings (All-MiniLM-L6-v2)",
+                "B. Hybrid Search combining dense vector cosine similarity with Sparse BM25 keyword matching",
+                "C. Increasing chunk overlap size to 80% without modifying vector index",
+                "D. Using single-token sliding window embedding without re-ranking"
+            ],
+            index=0,
+            label_visibility="collapsed"
         )
 
-        q_col1, q_col2 = st.columns([1.8, 1], vertical_alignment="top")
-        with q_col1:
-            quiz_topic = st.selectbox(
-                "Skill Domain:",
-                ["Retrieval & Vector Search", "Model Evaluation & Metrics", "Production FastAPI & Docker"],
-                index=0
-            )
+        col_submit, col_demo = st.columns([1.5, 2.5], vertical_alignment="center")
+        with col_submit:
+            submit_quiz = st.button("Submit Assessment", type="primary", use_container_width=True)
 
-            st.markdown(
-                f"<div style='background:#F7F7F5; border:1px solid #E5E5E2; border-radius:6px; padding:12px 14px; margin: 10px 0; font-size:13px; color:#171717;'>"
-                f"<strong>Scenario Question (1 of 3):</strong><br>"
-                f"In semantic search with dense vector embeddings, what primary failure occurs when chunk sizes are too large (>2000 tokens)?"
-                f"</div>",
-                unsafe_allow_html=True
-            )
-
-            selected_answer = st.radio(
-                "Select response:",
-                [
-                    "A. Embedding vectors dilute specific factual nuances into broad centroid averages.",
-                    "B. Cosine similarity calculations crash due to matrix dimensionality limits.",
-                    "C. Tokenizers reject documents with more than 512 total characters."
-                ],
-                index=0,
-                label_visibility="collapsed"
-            )
-
-        with q_col2:
-            st.markdown("<div style='font-size:12px; font-weight:600; color:#8A8A8A; text-transform:uppercase; margin-bottom:6px;'>Diagnostic Evaluation Mode</div>", unsafe_allow_html=True)
-            mode_choice = st.radio(
-                "Simulated Test Outcome:",
-                ["Detect Weakness (Score: 42%)", "Demonstrate Mastery (Score: 88%)"],
-                index=0,
-                help="Select score profile to test PathFinder's adaptive re-planning loop"
-            )
-            simulated_score = 42 if "42%" in mode_choice else 88
-
-            st.markdown("<div style='margin-top:14px;'>", unsafe_allow_html=True)
-            btn_run_quiz = st.button("Submit Assessment", type="primary", use_container_width=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-        if btn_run_quiz:
-            with st.spinner("Analyzing knowledge boundaries and updating learning tree..."):
-                updated_roadmap, adapt_event = apply_diagnostic_assessment(
-                    roadmap=roadmap,
-                    skill_topic=quiz_topic,
-                    score=simulated_score,
-                    profile=profile
+        if submit_quiz:
+            # If user picks B (correct), score is 90%. If user picks A/C/D, score is 42% (weakness triggers adaptation)
+            is_correct = selected_option.startswith("B.")
+            simulated_score = 90 if is_correct else 42
+            
+            with st.spinner("Evaluating response against competency model..."):
+                updated_roadmap, event = apply_diagnostic_assessment(
+                    st.session_state.roadmap_data,
+                    skill_topic="Retrieval & Vector Search",
+                    score=simulated_score
                 )
+                
                 st.session_state.roadmap_data = updated_roadmap
-                if adapt_event:
-                    st.session_state.adaptation_event = adapt_event
-                    if adapt_event.get("adapted"):
-                        st.toast("Assessment complete: Learning path adapted with remedial modules.", icon="ℹ️")
-                    else:
-                        st.toast("Assessment passed: Standard trajectory confirmed.", icon="✅")
+                st.session_state.adaptation_event = event
+                
+                if event and event.get("adapted"):
+                    st.session_state.completed_nodes = st.session_state.completed_nodes - {"AI302", "REM101", "REM102"}
+                
                 persist_state()
                 st.rerun()
 
 
-def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
-    """Renders the clean, restrained 'Next Up' learning action block."""
-    next_action_res = find_next_recommended_action(roadmap, completed_nodes)
+def render_node_inspector(node: Dict[str, Any], score: int, breakdown: Dict[str, Any]) -> None:
+    """Renders the side-by-side node inspector with Explainable AI scoring breakdown."""
+    node_id = html.escape(node.get("id", ""))
+    title = html.escape(node.get("title", ""))
+    provider = html.escape(node.get("provider", "Online Provider"))
+    duration = html.escape(node.get("duration", "2 weeks"))
+    n_type = html.escape(node.get("type", "Course"))
+    prereqs = node.get("prereqs", [])
+    skills = node.get("skills", [])
 
-    if next_action_res:
-        next_node, next_phase = next_action_res
-        n_id = next_node.get('id', '')
-        n_title = next_node.get('title', '')
-        n_dur = next_node.get('duration', '2 weeks')
-        n_type = next_node.get('type', 'Course')
-        n_prov = next_node.get('provider', 'Online')
-        n_why = next_node.get('why', 'Prerequisites are unlocked. Completing this milestone directly closes an identified skill gap.')
-        skills_closed = " · ".join(next_node.get("skills", ["Core Foundation"]))
-
-        card_html = f"""
-        <div class="next-action-card">
-            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
-                <div class="next-action-badge">Next Up</div>
-                <span class="status-tag status-active">{n_dur}</span>
-            </div>
-            <div class="next-action-title">{n_id}: {n_title}</div>
-            <div class="next-action-meta">
-                {n_type} · <strong>{n_prov}</strong> · {next_phase}
-            </div>
-            <div style="font-size:12px; color:#666666; margin-bottom:8px;">
-                <strong>Closes skill gaps in:</strong> {skills_closed}
-            </div>
-            <div class="next-action-why">
-                <strong>Why this milestone now:</strong> {n_why}
-            </div>
-        </div>
-        """
-        st.markdown(clean_html(card_html), unsafe_allow_html=True)
-    else:
-        completed_html = """
-        <div class="next-action-card" style="border-left-color:#15803D;">
-            <div class="next-action-badge" style="color:#15803D;">Curriculum Completed</div>
-            <div class="next-action-title">All Milestones Mastered</div>
-            <div class="next-action-meta">You have completed all prerequisite pathways in this personalized curriculum.</div>
-        </div>
-        """
-        st.markdown(clean_html(completed_html), unsafe_allow_html=True)
-
-
-def render_node_inspector(node: Dict[str, Any], score: int, breakdown: List[str]) -> None:
-    """Renders a clean module rationale inspector in editorial light mode."""
-    prereqs_str = ", ".join(node.get("prereqs", [])) if node.get("prereqs") else "None (Entry Point)"
-    skills_str = " · ".join(node.get("skills", ["General"]))
-    n_id = node.get('id', '')
-    n_title = node.get('title', '')
-    n_prov = node.get('provider', 'Online')
-    n_dur = node.get('duration', '2 weeks')
-    n_why = node.get('why', 'Key required competency.')
+    prereq_str = ", ".join(html.escape(p) for p in prereqs) if prereqs else "None (Entry milestone)"
+    skills_str = " · ".join(html.escape(s) for s in skills)
 
     inspector_html = f"""
-    <div class="node-inspector-box">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; border-bottom:1px solid #E5E5E2; padding-bottom:6px;">
-            <strong style="font-size:14px; color:#171717;">
-                {n_id}: {n_title}
-            </strong>
-            <span class="status-tag status-active">{score}% Match</span>
+    <div class="pf-inspector">
+        <div style="font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:0.08em; color:#2457D6; margin-bottom:4px;">
+            Milestone Inspector
         </div>
-        <div style="font-size:12.5px; color:#666666; margin-bottom:6px;">
-            <strong>Provider:</strong> {n_prov} · {n_dur}
+        <div style="font-size:16px; font-weight:650; color:#111111; margin-bottom:4px;">{node_id}: {title}</div>
+        <div style="font-size:12.5px; color:#4B4B4B; margin-bottom:12px;">{n_type} · {provider} · {duration}</div>
+        
+        <div style="border-top:1px solid #EAE9E4; padding-top:10px; margin-bottom:10px; font-size:12.5px; line-height:1.5;">
+            <div style="color:#858585; font-size:11px; font-weight:600; text-transform:uppercase; margin-bottom:2px;">Prerequisites</div>
+            <div style="color:#111111; font-weight:500;">{prereq_str}</div>
         </div>
-        <div style="font-size:12.5px; color:#666666; margin-bottom:8px;">
-            <strong>Prerequisites:</strong> <span style="color:#171717;">{prereqs_str}</span>
+
+        <div style="border-top:1px solid #EAE9E4; padding-top:10px; margin-bottom:12px; font-size:12.5px; line-height:1.5;">
+            <div style="color:#858585; font-size:11px; font-weight:600; text-transform:uppercase; margin-bottom:2px;">Target Competencies</div>
+            <div style="color:#111111;">{skills_str}</div>
         </div>
-        <div style="font-size:13px; color:#404040; line-height:1.45; margin-bottom:8px; background:#F7F7F5; padding:8px 10px; border-radius:6px; border:1px solid #E5E5E2;">
-            <strong>Why This Module:</strong> {n_why}
-        </div>
-        <div style="font-size:12px; color:#8A8A8A;">
-            <strong>Competencies:</strong> {skills_str}
+
+        <div style="background:#F7F6F2; border:1px solid #DDDCD6; border-radius:6px; padding:10px 12px; font-size:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-weight:600; color:#111111;">AI Relevance Score</span>
+                <strong style="color:#2457D6; font-size:13px;">{score}/100</strong>
+            </div>
+            <div style="color:#4B4B4B; font-size:11.5px; line-height:1.45;">
+                {'<br/>'.join(html.escape(item) for item in breakdown) if isinstance(breakdown, list) else html.escape(str(breakdown))}
+            </div>
         </div>
     </div>
     """
