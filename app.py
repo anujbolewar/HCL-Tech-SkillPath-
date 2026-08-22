@@ -6,6 +6,10 @@ import time
 import os
 import re
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Import Groq SDK
 try:
     from groq import Groq
