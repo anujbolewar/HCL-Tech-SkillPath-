@@ -6,6 +6,7 @@ import time
 import os
 import re
 from collections import Counter
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -178,8 +179,48 @@ DEFAULT_PROFILE = {
 
 WELCOME_MESSAGE = "👋 Hi! I'm your **Groq-Powered SkillPath AI Assistant by Team Cortex**. Tell me your learning goal or ask me anything about your roadmap!"
 
+# ==========================================
+# LOCAL PERSISTENCE (survives page refresh)
+# ==========================================
+STATE_FILE = Path(".skillpath_state.json")
+
+def persist_state():
+    """Snapshot profile, roadmap, progress and chat to a local JSON file."""
+    try:
+        payload = {
+            "user_profile": st.session_state.get("user_profile"),
+            "roadmap_data": st.session_state.get("roadmap_data"),
+            "completed_nodes": sorted(st.session_state.get("completed_nodes", set())),
+            "chat_history": st.session_state.get("chat_history", [])[-40:],
+        }
+        STATE_FILE.write_text(json.dumps(payload, ensure_ascii=False))
+    except Exception:
+        pass  # persistence is best-effort; never break the app over IO
+
+def load_persisted_state():
+    """Restore the last snapshot into session_state on a fresh browser session."""
+    try:
+        if not STATE_FILE.exists():
+            return
+        data = json.loads(STATE_FILE.read_text())
+        if isinstance(data.get("user_profile"), dict):
+            st.session_state.user_profile = {**DEFAULT_PROFILE, **data["user_profile"]}
+        if isinstance(data.get("roadmap_data"), dict) and data["roadmap_data"].get("phases"):
+            st.session_state.roadmap_data = data["roadmap_data"]
+        if isinstance(data.get("completed_nodes"), list):
+            st.session_state.completed_nodes = set(data["completed_nodes"])
+        if isinstance(data.get("chat_history"), list) and data["chat_history"]:
+            st.session_state.chat_history = data["chat_history"]
+    except Exception:
+        pass  # corrupt/unreadable file -> start clean
+
 if 'user_profile' not in st.session_state:
     st.session_state.user_profile = DEFAULT_PROFILE.copy()
+
+# Restore last session exactly once per browser session, before widgets render
+if '_state_loaded' not in st.session_state:
+    st.session_state._state_loaded = True
+    load_persisted_state()
 
 if 'roadmap_data' not in st.session_state:
     st.session_state.roadmap_data = None
@@ -215,6 +256,7 @@ if st.session_state.get('_pending_scratch'):
     st.session_state._prev_demo = False
     st.session_state.goal_box = ""
     st.session_state._pending_scratch = False
+    STATE_FILE.unlink(missing_ok=True)
 
 if st.session_state.get('_pending_demo_off'):
     st.session_state.demo_mode = False
@@ -885,6 +927,7 @@ def _generate_roadmap(goal_text: str):
         st.session_state.completed_nodes = set()
         if st.session_state._pending_demo_off:
             st.rerun()
+        persist_state()
         st.toast("🎉 Personal Learning Pathway Generated!", icon="🚀")
 
 # One-click domain selection: fills the input and generates instantly
@@ -1095,10 +1138,12 @@ with tab_recs:
                 if is_done:
                     if st.button("✓ Completed", key=f"btn_undo_{node['id']}", width="stretch"):
                         st.session_state.completed_nodes.remove(node["id"])
+                        persist_state()
                         st.rerun()
                 else:
                     if st.button("Mark Complete", key=f"btn_done_{node['id']}", type="primary", disabled=not prereqs_met, width="stretch"):
                         st.session_state.completed_nodes.add(node["id"])
+                        persist_state()
                         st.toast(f"🎉 Milestone Completed: {node['title']}!", icon="✅")
                         st.rerun()
                 
@@ -1220,6 +1265,7 @@ RULES:
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
             # Keep stored history bounded too (welcome msg + last 39 turns)
             st.session_state.chat_history = st.session_state.chat_history[-40:]
+            persist_state()
             st.rerun()
 
 # ------------------------------------------
