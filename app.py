@@ -52,6 +52,7 @@ from ui.components import (
     render_skill_gap_section,
     render_next_best_action_card,
     render_node_inspector,
+    clean_html,
 )
 from ui.flow_visualizer import render_dag_flowchart
 from ui.radar_chart import render_dynamic_radar_chart
@@ -245,7 +246,7 @@ if btn_generate and goal_query.strip():
 
 # Empty State Guard
 if not st.session_state.roadmap_data:
-    st.markdown("""
+    empty_html = """
     <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:36px; text-align:center; margin-top:20px;">
         <h3 style="font-family:'Outfit',sans-serif; font-size:1.4rem; color:#F8FAFC; margin-bottom:8px;">
             Tell PathFinder what you want to become.
@@ -254,7 +255,8 @@ if not st.session_state.roadmap_data:
             Select a suggested goal above, enter any custom objective, or pick an evaluation persona in the sidebar to generate your personalized, prerequisite-aware learning roadmap.
         </p>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(clean_html(empty_html), unsafe_allow_html=True)
     st.stop()
 
 # ==========================================
@@ -268,11 +270,12 @@ render_skill_gap_section(roadmap, st.session_state.user_profile)
 # 2. Adaptive Replanning Indicator (when a milestone completion updates downstream state)
 if st.session_state.get("_show_replan_banner"):
     last_title = st.session_state.get("_last_completed_title", "milestone")
-    st.markdown(f"""
+    banner_html = f"""
     <div class="replan-banner">
         <strong>⚡ ROADMAP ADAPTED:</strong> Verified mastery of <em>{last_title}</em>. Downstream prerequisites have been dynamically unlocked.
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(clean_html(banner_html), unsafe_allow_html=True)
 
 # 3. Prominent NEXT BEST ACTION Card
 render_next_best_action_card(roadmap, st.session_state.completed_nodes)

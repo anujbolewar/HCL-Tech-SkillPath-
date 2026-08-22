@@ -6,7 +6,7 @@ import graphviz
 
 from engine.xai_scorer import compute_node_relevance
 from engine.re_router import get_node_status
-from ui.components import render_node_inspector
+from ui.components import render_node_inspector, clean_html
 
 try:
     from streamlit_flow import streamlit_flow
@@ -36,7 +36,7 @@ def render_dag_flowchart(
     selected_node_id = st.session_state.get("selected_node_id")
 
     # Legend Header
-    st.markdown("""
+    legend_html = """
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <span style="font-family:'Outfit',sans-serif; font-size:1.05rem; font-weight:600; color:#F8FAFC;">
             Learning Roadmap (DAG)
@@ -47,7 +47,8 @@ def render_dag_flowchart(
             <span><span style="color:#64748B; font-weight:700;">●</span> Locked (Prereqs Pending)</span>
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(clean_html(legend_html), unsafe_allow_html=True)
 
     flow_col, side_ctrl = st.columns([2.4, 1.1], vertical_alignment="top")
 
@@ -137,12 +138,13 @@ def render_dag_flowchart(
                 )
                 render_node_inspector(node_obj, score, breakdown)
             else:
-                st.markdown("""
+                prompt_html = """
                 <div class="node-inspector-box" style="color:#94A3B8; font-size:0.85rem; line-height:1.5;">
                     💡 <strong>Node Inspector</strong><br>
                     Click any node on the roadmap canvas or choose from the dropdown to view its prerequisite chain, provider, and Explainable AI match score.
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                st.markdown(clean_html(prompt_html), unsafe_allow_html=True)
 
     else:
         # Graphviz fallback

@@ -6,9 +6,14 @@ import streamlit as st
 from core.config import APP_TITLE, TEAM_NAME
 from engine.re_router import calculate_progress_stats, get_node_status, find_next_recommended_action
 
+def clean_html(html_str: str) -> str:
+    """Strips all leading and trailing whitespace from each line to prevent Markdown codeblock parsing."""
+    return "\n".join([line.strip() for line in html_str.strip().splitlines()])
+
+
 def render_app_header(role_title: str = "Personalized Curriculum") -> None:
     """Renders a compact, functional application header (54px tall)."""
-    st.markdown(f"""
+    raw_html = f"""
     <div class="app-header">
         <div class="app-brand">
             🎓 PathFinder <span>AI</span>
@@ -18,7 +23,8 @@ def render_app_header(role_title: str = "Personalized Curriculum") -> None:
             Team Cortex • HCL Tech Hackathon
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(clean_html(raw_html), unsafe_allow_html=True)
 
 
 def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -> None:
@@ -36,10 +42,10 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
     identified_gaps = [s for s in target_skills if s not in known_skills]
 
     # Baseline rows
-    baseline_html = ""
+    baseline_items = []
     if known_skills:
         for s in known_skills[:4]:
-            baseline_html += f"""
+            baseline_items.append(f"""
             <div style="margin-bottom: 10px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
                     <span style="color:#F8FAFC; font-weight:500;">{s}</span>
@@ -49,15 +55,16 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
                     <div style="background:#10B981; width:85%; height:100%; border-radius:999px;"></div>
                 </div>
             </div>
-            """
+            """)
+        baseline_html = "".join(baseline_items)
     else:
         baseline_html = "<div style='color:#64748B; font-size:0.85rem; padding: 12px 0;'>No prior skills declared (Foundational beginner track).</div>"
 
     # Gaps rows
-    gaps_html = ""
+    gaps_items = []
     if identified_gaps:
         for s in identified_gaps[:4]:
-            gaps_html += f"""
+            gaps_items.append(f"""
             <div style="margin-bottom: 10px;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:0.85rem;">
                     <span style="color:#F8FAFC; font-weight:500;">{s}</span>
@@ -67,9 +74,13 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
                     <div style="background:#3B82F6; width:20%; height:100%; border-radius:999px;"></div>
                 </div>
             </div>
-            """
+            """)
+        gaps_html = "".join(gaps_items)
     else:
         gaps_html = "<div style='color:#64748B; font-size:0.85rem; padding: 12px 0;'>All targeted skills align with your baseline profile.</div>"
+
+    hours = profile.get('weekly_hours', 15)
+    exp = profile.get('experience_level', 'Intermediate')
 
     card_html = f"""
     <div style="background:#0F1626; border:1px solid #1E293B; border-radius:10px; padding:18px 22px; margin-bottom:16px;">
@@ -78,7 +89,7 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
                 Learner Diagnostic & Skill Gap Map
             </span>
             <span style="font-size:0.82rem; color:#94A3B8;">
-                Paced for <strong>{profile.get('weekly_hours', 15)} hrs/week</strong> (Level: {profile.get('experience_level', 'Intermediate')})
+                Paced for <strong>{hours} hrs/week</strong> (Level: {exp})
             </span>
         </div>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 28px;">
@@ -97,7 +108,7 @@ def render_skill_gap_section(roadmap: Dict[str, Any], profile: Dict[str, Any]) -
         </div>
     </div>
     """
-    st.markdown(card_html, unsafe_allow_html=True)
+    st.markdown(clean_html(card_html), unsafe_allow_html=True)
 
 
 def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
@@ -106,55 +117,70 @@ def render_next_best_action_card(roadmap: Dict[str, Any], completed_nodes: Set[s
 
     if next_action_res:
         next_node, next_phase = next_action_res
-        st.markdown(f"""
+        n_id = next_node.get('id', '')
+        n_title = next_node.get('title', '')
+        n_dur = next_node.get('duration', '2 weeks')
+        n_type = next_node.get('type', 'Course')
+        n_prov = next_node.get('provider', 'Online')
+        n_why = next_node.get('why', 'Prerequisites are unlocked. Completing this milestone directly closes an identified skill gap.')
+
+        card_html = f"""
         <div class="next-action-card">
             <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
                 <div class="next-action-badge">▶ Next Best Action</div>
-                <span class="status-tag status-active">{next_node.get('duration', '2 weeks')}</span>
+                <span class="status-tag status-active">{n_dur}</span>
             </div>
-            <div class="next-action-title">{next_node.get('id')}: {next_node.get('title')}</div>
+            <div class="next-action-title">{n_id}: {n_title}</div>
             <div class="next-action-meta">
-                {next_node.get('type', 'Course')} · <em>{next_node.get('provider', 'Online')}</em> · {next_phase}
+                {n_type} · <em>{n_prov}</em> · {next_phase}
             </div>
             <div class="next-action-why">
-                <strong>Why PathFinder recommended this now:</strong> {next_node.get('why', 'Prerequisites are unlocked. Completing this milestone directly closes an identified skill gap.')}
+                <strong>Why PathFinder recommended this now:</strong> {n_why}
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(clean_html(card_html), unsafe_allow_html=True)
     else:
-        st.markdown("""
+        completed_html = """
         <div class="next-action-card" style="border-color:#059669; border-left-color:#059669;">
             <div class="next-action-badge" style="color:#34D399;">✓ Curriculum Completed</div>
             <div class="next-action-title">All Milestones Mastered!</div>
             <div class="next-action-meta">You have completed all prerequisite pathways in this personalized curriculum.</div>
         </div>
-        """, unsafe_allow_html=True)
+        """
+        st.markdown(clean_html(completed_html), unsafe_allow_html=True)
 
 
 def render_node_inspector(node: Dict[str, Any], score: int, breakdown: List[str]) -> None:
     """Renders a clean module rationale inspector near the roadmap."""
     prereqs_str = ", ".join(node.get("prereqs", [])) if node.get("prereqs") else "None (Entry Point)"
     skills_str = " · ".join(node.get("skills", ["General"]))
+    n_id = node.get('id', '')
+    n_title = node.get('title', '')
+    n_prov = node.get('provider', 'Online')
+    n_dur = node.get('duration', '2 weeks')
+    n_why = node.get('why', 'Key required competency.')
 
-    st.markdown(f"""
+    inspector_html = f"""
     <div class="node-inspector-box">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <strong style="font-family:'Outfit',sans-serif; font-size:1.05rem; color:#F8FAFC;">
-                {node.get('id')}: {node.get('title')}
+                {n_id}: {n_title}
             </strong>
             <span class="status-tag status-active">{score}% Match</span>
         </div>
         <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:8px;">
-            {node.get('provider', 'Online')} · {node.get('duration', '2 weeks')}
+            {n_prov} · {n_dur}
         </div>
         <div style="font-size:0.82rem; color:#94A3B8; margin-bottom:8px;">
             Prerequisites: <strong style="color:#F8FAFC;">{prereqs_str}</strong>
         </div>
         <div style="font-size:0.88rem; color:#CBD5E1; line-height:1.45; margin-bottom:8px; background:#162035; padding:8px 12px; border-radius:6px;">
-            <strong>Why This Module:</strong> {node.get('why', 'Key required competency.')}
+            <strong>Why This Module:</strong> {n_why}
         </div>
         <div style="font-size:0.8rem; color:#94A3B8;">
             <strong>Skills:</strong> {skills_str}
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """
+    st.markdown(clean_html(inspector_html), unsafe_allow_html=True)

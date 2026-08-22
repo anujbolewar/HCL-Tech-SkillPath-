@@ -5,6 +5,7 @@ import streamlit as st
 
 from core.state import persist_state
 from engine.re_router import get_node_status
+from ui.components import clean_html
 
 def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[str]) -> None:
     """Renders structured recommendation cards with single status indicators and clean metadata."""
@@ -36,24 +37,30 @@ def render_recommendation_cards(roadmap: Dict[str, Any], completed_nodes: Set[st
                 )
 
                 skills_str = " · ".join(node.get("skills", []))
+                n_title = node.get('title', '')
+                n_prov = node.get('provider', 'Online')
+                n_dur = node.get('duration', '2 weeks')
+                n_type = node.get('type', 'Course')
+                n_why = node.get('why', 'Core required competency on your roadmap.')
 
-                st.markdown(f"""
+                card_html = f"""
                 <div class="{card_class}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                        <div class="milestone-title">{node_id}: {node.get('title', '')}</div>
+                        <div class="milestone-title">{node_id}: {n_title}</div>
                         {status_html}
                     </div>
                     <div class="milestone-meta">
-                        {node.get('provider', 'Online')} · <strong>{node.get('duration', '2 weeks')}</strong> · {node.get('type', 'Course')}
+                        {n_prov} · <strong>{n_dur}</strong> · {n_type}
                     </div>
                     <div class="milestone-why">
-                        {node.get('why', 'Core required competency on your roadmap.')}
+                        {n_why}
                     </div>
                     <div style="font-size:0.8rem; color:#64748B; margin-top:4px;">
                         Skills: {skills_str}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
+                st.markdown(clean_html(card_html), unsafe_allow_html=True)
 
             with c_action:
                 if is_done:
