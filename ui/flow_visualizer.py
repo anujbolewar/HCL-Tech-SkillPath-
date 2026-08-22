@@ -37,14 +37,15 @@ def render_dag_flowchart(
 
     # Legend Header
     legend_html = """
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid #EAE9E4; padding-bottom:10px;">
-        <span style="font-size:14px; font-weight:650; text-transform:uppercase; letter-spacing:0.06em; color:#858585;">
-            Learning Path (Prerequisite DAG)
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid #EAE9E4; padding-bottom:8px;">
+        <span style="font-size:12.5px; font-weight:650; text-transform:uppercase; letter-spacing:0.06em; color:#858585;">
+            Learning Path (Prerequisite Sequence)
         </span>
-        <div style="display:flex; gap:16px; font-size:12px; color:#4B4B4B;">
+        <div style="display:flex; gap:14px; font-size:11.5px; color:#4B4B4B;">
             <span><span style="color:#2F7D5A; font-weight:700;">●</span> Completed</span>
-            <span><span style="color:#2457D6; font-weight:700;">●</span> Up Next / Unlocked</span>
-            <span><span style="color:#858585; font-weight:700;">●</span> Locked (Prerequisites Pending)</span>
+            <span><span style="color:#2457D6; font-weight:700;">●</span> Up Next</span>
+            <span><span style="color:#C58A35; font-weight:700;">●</span> New (Remediation)</span>
+            <span><span style="color:#858585; font-weight:700;">●</span> Locked</span>
         </div>
     </div>
     """
@@ -60,9 +61,10 @@ def render_dag_flowchart(
             for node_idx, node in enumerate(phase.get("nodes", [])):
                 node_id = node["id"]
                 status = get_node_status(node, completed_nodes)
+                is_remedial = node_id.startswith("REM")
                 
                 pos_x = phase_idx * 260
-                pos_y = node_idx * 120 - 20
+                pos_y = node_idx * 115 - 20
 
                 if status == "completed":
                     label = f"{node_id}: {node['title']}\n{node.get('duration', '2w')} [Completed]"
@@ -71,11 +73,24 @@ def render_dag_flowchart(
                         "color": "#111111",
                         "border": "1px solid #DDDCD6",
                         "borderLeft": "3.5px solid #2F7D5A",
-                        "borderRadius": "6px",
+                        "borderRadius": "5px",
                         "fontSize": "11px",
                         "fontWeight": "500",
-                        "padding": "8px 10px",
-                        "boxShadow": "0 2px 6px rgba(20,20,20,0.02)"
+                        "padding": "7px 9px",
+                        "boxShadow": "0 1px 4px rgba(20,20,20,0.02)"
+                    }
+                elif is_remedial:
+                    label = f"{node_id}: {node['title']}\n{node.get('duration', '1w')} [NEW]"
+                    node_style = {
+                        "backgroundColor": "#FDFCF9",
+                        "color": "#111111",
+                        "border": "1px solid #DDDCD6",
+                        "borderLeft": "3.5px solid #C58A35",
+                        "borderRadius": "5px",
+                        "fontSize": "11px",
+                        "fontWeight": "600",
+                        "padding": "7px 9px",
+                        "boxShadow": "0 2px 8px rgba(197,138,53,0.06)"
                     }
                 elif status == "ready":
                     label = f"{node_id}: {node['title']}\n{node.get('duration', '2w')} [Up Next]"
@@ -84,11 +99,11 @@ def render_dag_flowchart(
                         "color": "#111111",
                         "border": "1px solid #DDDCD6",
                         "borderLeft": "3.5px solid #2457D6",
-                        "borderRadius": "6px",
+                        "borderRadius": "5px",
                         "fontSize": "11px",
                         "fontWeight": "600",
-                        "padding": "8px 10px",
-                        "boxShadow": "0 3px 10px rgba(36,87,214,0.06)"
+                        "padding": "7px 9px",
+                        "boxShadow": "0 2px 8px rgba(36,87,214,0.05)"
                     }
                 else:
                     prereq_info = f"Requires {', '.join(node.get('prereqs', []))}"
@@ -97,9 +112,9 @@ def render_dag_flowchart(
                         "backgroundColor": "#FAF9F5",
                         "color": "#858585",
                         "border": "1px solid #DDDCD6",
-                        "borderRadius": "6px",
+                        "borderRadius": "5px",
                         "fontSize": "11px",
-                        "padding": "8px 10px"
+                        "padding": "7px 9px"
                     }
 
                 flow_node = StreamlitFlowNode(
@@ -119,8 +134,8 @@ def render_dag_flowchart(
                         id=edge_id,
                         source=prereq,
                         target=node_id,
-                        animated=(status == "ready"),
-                        style={"stroke": "#2457D6" if status == "ready" else "#DDDCD6", "strokeWidth": "1.5px"}
+                        animated=(status == "ready" or is_remedial),
+                        style={"stroke": "#C58A35" if is_remedial else ("#2457D6" if status == "ready" else "#DDDCD6"), "strokeWidth": "1.5px"}
                     )
                     flow_edges.append(flow_edge)
 
@@ -130,13 +145,13 @@ def render_dag_flowchart(
             event = streamlit_flow(
                 key="learning_path_flow",
                 state=flow_state,
-                height=390,
+                height=380,
                 fit_view=True,
                 show_minimap=True,
                 show_controls=True,
                 get_node_on_click=True,
                 layout=TreeLayout(direction="right"),
-                style={"backgroundColor": "#F7F6F2", "border": "1px solid #DDDCD6", "borderRadius": "8px"}
+                style={"backgroundColor": "#F7F6F2", "border": "1px solid #DDDCD6", "borderRadius": "6px"}
             )
 
         # Catch canvas click event
@@ -145,7 +160,7 @@ def render_dag_flowchart(
             st.session_state.selected_node_id = event.selected_id
 
         with side_ctrl:
-            st.markdown("<div style='font-size:11px; font-weight:650; color:#858585; text-transform:uppercase; margin-bottom:6px; letter-spacing:0.06em;'>Module Inspector</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:10.5px; font-weight:650; color:#858585; text-transform:uppercase; margin-bottom:4px; letter-spacing:0.06em;'>Module Inspector</div>", unsafe_allow_html=True)
             node_options = ["None (Select or click node)"] + list(all_nodes_dict.keys())
             curr_idx = 0
             if selected_node_id in all_nodes_dict:
@@ -172,9 +187,9 @@ def render_dag_flowchart(
                 render_node_inspector(node_obj, score, breakdown)
             else:
                 placeholder_html = """
-                <div class="pf-inspector" style="text-align:center; padding:28px 16px; color:#858585;">
-                    <div style="font-size:13px; font-weight:600; color:#111111; margin-bottom:4px;">Node Inspector</div>
-                    <div style="font-size:12px; line-height:1.45;">Click any node on the roadmap canvas or select from the dropdown to view its prerequisite chain, provider, and relevance score.</div>
+                <div class="pf-inspector" style="text-align:center; padding:24px 14px; color:#858585;">
+                    <div style="font-size:12.5px; font-weight:600; color:#111111; margin-bottom:4px;">Node Inspector</div>
+                    <div style="font-size:11.5px; line-height:1.45;">Click any node on the roadmap canvas or select from the dropdown to view its prerequisite chain, provider, and relevance score.</div>
                 </div>
                 """
                 st.markdown(clean_html(placeholder_html), unsafe_allow_html=True)
@@ -190,15 +205,18 @@ def render_dag_flowchart(
             for node in phase.get("nodes", []):
                 node_id = node["id"]
                 status = get_node_status(node, completed_nodes)
+                is_remedial = node_id.startswith("REM")
                 if status == "completed":
                     dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#FFFFFF", color="#2F7D5A", fontcolor="#2F7D5A")
+                elif is_remedial:
+                    dot.node(node_id, f"{node_id}\n{node['title']} [NEW]", fillcolor="#FDFCF9", color="#C58A35", fontcolor="#C58A35")
                 elif status == "ready":
                     dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#FFFFFF", color="#2457D6", fontcolor="#2457D6")
                 else:
                     dot.node(node_id, f"{node_id}\n{node['title']}", fillcolor="#FAF9F5", color="#DDDCD6", fontcolor="#858585")
 
                 for prereq in node.get("prereqs", []):
-                    edge_color = "#2457D6" if status == "ready" else "#DDDCD6"
+                    edge_color = "#C58A35" if is_remedial else ("#2457D6" if status == "ready" else "#DDDCD6")
                     dot.edge(prereq, node_id, color=edge_color)
 
         with flow_col:
