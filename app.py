@@ -5,6 +5,7 @@ import json
 import time
 import os
 import re
+from collections import Counter
 
 from dotenv import load_dotenv
 
@@ -1183,23 +1184,36 @@ with tab_dash:
     
     with col_radar:
         st.markdown("### 🕸️ Skill Competency Radar Chart")
-        
-        skill_categories = ["Math & Stats", "Programming", "ML Modeling", "Deep Learning", "MLOps & Deploy"]
-        base_vals = [40, 60, 30, 20, 25] if st.session_state.user_profile['experience_level'] == 'Intermediate' else [20, 40, 10, 5, 10]
-        completed_boost = len(st.session_state.completed_nodes) * 12
-        current_vals = [min(100, val + completed_boost) for val in base_vals]
+
+        # Derive axes from THIS roadmap's skills so a guitar path shows
+        # Chords/Repertoire instead of ML jargon
+        node_skills = [
+            s for phase in roadmap["phases"]
+            for n in phase["nodes"] for s in (n.get("skills") or [])
+        ]
+        top_skills = [s for s, _ in Counter(node_skills).most_common(6)] or ["Fundamentals"]
+        known = set(st.session_state.user_profile.get("skills") or [])
+        base_vals = [45 if s in known else 15 for s in top_skills]
+
+        current_vals = []
+        for skill, base in zip(top_skills, base_vals):
+            trained = any(
+                skill in (n.get("skills") or []) and n["id"] in st.session_state.completed_nodes
+                for p in roadmap["phases"] for n in p["nodes"]
+            )
+            current_vals.append(min(100, base + (18 if trained else 0)))
         
         fig = go.Figure()
         fig.add_trace(go.Scatterpolar(
             r=base_vals,
-            theta=skill_categories,
+            theta=top_skills,
             fill='toself',
             name='Baseline Profile',
             line_color='#4facfe'
         ))
         fig.add_trace(go.Scatterpolar(
             r=current_vals,
-            theta=skill_categories,
+            theta=top_skills,
             fill='toself',
             name='Current Competency',
             line_color='#10b981'
