@@ -287,6 +287,7 @@ CUSTOM_CSS = """
         height: 22px !important;
         min-height: 22px !important;
         border-radius: 0px !important;
+        white-space: nowrap !important;
     }
 
     div[class*="st-key-pop_btn_"] button p,
@@ -294,6 +295,7 @@ CUSTOM_CSS = """
         color: #5F5F5F !important;
         font-size: 12px !important;
         font-weight: 500 !important;
+        white-space: nowrap !important;
         transition: color 150ms ease, text-decoration 150ms ease !important;
     }
 
@@ -1101,6 +1103,13 @@ CUSTOM_CSS = """
 
     [data-testid="stChatInput"] button:hover {
         color: var(--pf-blue) !important;
+    }
+
+    [data-testid="stFormSubmitButton"] button,
+    [data-testid="stFormSubmitButton"] button p,
+    [data-testid="stFormSubmitButton"] button span {
+        white-space: nowrap !important;
+        min-width: 75px !important;
     }
 
     /* =========================================================
