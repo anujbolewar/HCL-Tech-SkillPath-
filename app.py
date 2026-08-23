@@ -116,19 +116,20 @@ with st.sidebar:
 
     st.divider()
 
-    # Settings Expander (Learner Settings + Collapsed Developer/Demo Mode)
-    with st.expander("Settings", expanded=False):
-        st.markdown("<div class='pf-sidebar-tag'>Learner Pace & Profile</div>", unsafe_allow_html=True)
+    # 1. Learner Profile & Pace Expander
+    with st.expander("Learner Pace & Profile", expanded=False):
         exp_input = st.select_slider(
             "Experience Level",
             options=["Beginner", "Intermediate", "Advanced"],
-            value=st.session_state.user_profile.get("experience_level", "Intermediate")
+            value=st.session_state.user_profile.get("experience_level", "Intermediate"),
+            key="sb_exp_slider"
         )
         hours_input = st.slider(
             "Weekly Study Hours",
             min_value=5,
             max_value=40,
-            value=st.session_state.user_profile.get("weekly_hours", 15)
+            value=st.session_state.user_profile.get("weekly_hours", 15),
+            key="sb_hours_slider"
         )
         known_skills_input = st.multiselect(
             "Mastered Skills",
@@ -136,7 +137,8 @@ with st.sidebar:
                 "Python", "Basic Math", "SQL", "Git", "HTML/CSS", "Linear Algebra",
                 "JavaScript", "TypeScript", "Docker", "Linux", "React", "Calculus"
             ],
-            default=st.session_state.user_profile.get("skills", ["Python", "Basic Math", "SQL"])
+            default=st.session_state.user_profile.get("skills", ["Python", "Basic Math", "SQL"]),
+            key="sb_skills_multi"
         )
 
         st.session_state.user_profile.update({
@@ -145,81 +147,85 @@ with st.sidebar:
             "skills": known_skills_input
         })
 
-        st.markdown("<div style='margin-top:14px;'></div>", unsafe_allow_html=True)
-        
-        # Sub-expander: Developer / Demo Mode
-        with st.expander("Developer / Demo Mode", expanded=False):
-            st.markdown("<div class='pf-sidebar-tag'>Evaluation Persona Presets</div>", unsafe_allow_html=True)
-            selected_persona_name = st.selectbox(
-                "Load Student Persona:",
-                options=["Custom Goal"] + list(DEMO_PERSONAS.keys()),
-                index=0,
-                label_visibility="collapsed"
-            )
+    # 2. Developer & Demo Presets Expander (Separated, No Nesting)
+    with st.expander("Developer & Demo Mode", expanded=False):
+        st.markdown("<div class='pf-sidebar-tag'>Evaluation Persona Presets</div>", unsafe_allow_html=True)
+        selected_persona_name = st.selectbox(
+            "Load Student Persona:",
+            options=["Custom Goal"] + list(DEMO_PERSONAS.keys()),
+            index=0,
+            label_visibility="collapsed",
+            key="sb_persona_select"
+        )
 
-            if selected_persona_name != "Custom Goal":
-                persona_data = DEMO_PERSONAS[selected_persona_name]
-                if st.session_state.get("_loaded_persona") != selected_persona_name:
-                    st.session_state._loaded_persona = selected_persona_name
-                    st.session_state.user_profile = persona_data["profile"].copy()
-                    st.session_state.roadmap_data = generate_fallback_roadmap(
-                        persona_data["goal"], persona_data["profile"]
-                    )
-                    st.session_state.completed_nodes = set(persona_data.get("completed_initial", []))
-                    st.session_state.selected_node_id = None
-                    st.session_state.adaptation_event = None
-                    st.session_state._show_replan_banner = False
-                    persist_state()
-                    st.rerun()
-
-            st.markdown("<div class='pf-sidebar-tag' style='margin-top:10px;'>Inference Engine</div>", unsafe_allow_html=True)
-            provider = st.radio(
-                "Inference Engine",
-                ["Smart Offline (Default)", "Groq Cloud (Llama 3.3)", "Google Gemini"],
-                index=0,
-                label_visibility="collapsed"
-            )
-
-            active_model = "llama-3.3-70b-versatile"
-            groq_key_input = ""
-            gemini_key_input = ""
-
-            if provider == "Groq Cloud (Llama 3.3)":
-                groq_key_input = st.text_input(
-                    "Groq API Key",
-                    type="password",
-                    placeholder="gsk_...",
-                    value=os.environ.get("GROQ_API_KEY", "")
+        if selected_persona_name != "Custom Goal":
+            persona_data = DEMO_PERSONAS[selected_persona_name]
+            if st.session_state.get("_loaded_persona") != selected_persona_name:
+                st.session_state._loaded_persona = selected_persona_name
+                st.session_state.user_profile = persona_data["profile"].copy()
+                st.session_state.roadmap_data = generate_fallback_roadmap(
+                    persona_data["goal"], persona_data["profile"]
                 )
-                selected_model_key = st.selectbox(
-                    "Model",
-                    options=list(GROQ_MODEL_CATALOG.keys()),
-                    index=0
-                )
-                active_model = selected_model_key
-                if groq_key_input:
-                    os.environ["GROQ_API_KEY"] = groq_key_input
-
-            elif provider == "Google Gemini":
-                gemini_key_input = st.text_input(
-                    "Gemini API Key",
-                    type="password",
-                    placeholder="AIza...",
-                    value=os.environ.get("GEMINI_API_KEY", "")
-                )
-                selected_gemini_key = st.selectbox(
-                    "Model",
-                    options=list(GEMINI_MODEL_CATALOG.keys()),
-                    index=0
-                )
-                active_model = selected_gemini_key
-                if gemini_key_input:
-                    os.environ["GEMINI_API_KEY"] = gemini_key_input
-
-            st.markdown("<div class='pf-sidebar-tag' style='margin-top:10px;'>State Reset</div>", unsafe_allow_html=True)
-            if st.button("Start Fresh", use_container_width=True):
-                st.session_state._pending_scratch = True
+                st.session_state.completed_nodes = set(persona_data.get("completed_initial", []))
+                st.session_state.selected_node_id = None
+                st.session_state.adaptation_event = None
+                st.session_state._show_replan_banner = False
+                persist_state()
                 st.rerun()
+
+        st.markdown("<div class='pf-sidebar-tag' style='margin-top:10px;'>Inference Engine</div>", unsafe_allow_html=True)
+        provider = st.radio(
+            "Inference Engine",
+            ["Smart Offline (Default)", "Groq Cloud (Llama 3.3)", "Google Gemini"],
+            index=0,
+            label_visibility="collapsed",
+            key="sb_provider_radio"
+        )
+
+        active_model = "llama-3.3-70b-versatile"
+        groq_key_input = ""
+        gemini_key_input = ""
+
+        if provider == "Groq Cloud (Llama 3.3)":
+            groq_key_input = st.text_input(
+                "Groq API Key",
+                type="password",
+                placeholder="gsk_...",
+                value=os.environ.get("GROQ_API_KEY", ""),
+                key="sb_groq_key"
+            )
+            selected_model_key = st.selectbox(
+                "Model",
+                options=list(GROQ_MODEL_CATALOG.keys()),
+                index=0,
+                key="sb_groq_model"
+            )
+            active_model = selected_model_key
+            if groq_key_input:
+                os.environ["GROQ_API_KEY"] = groq_key_input
+
+        elif provider == "Google Gemini":
+            gemini_key_input = st.text_input(
+                "Gemini API Key",
+                type="password",
+                placeholder="AIza...",
+                value=os.environ.get("GEMINI_API_KEY", ""),
+                key="sb_gemini_key"
+            )
+            selected_gemini_key = st.selectbox(
+                "Model",
+                options=list(GEMINI_MODEL_CATALOG.keys()),
+                index=0,
+                key="sb_gemini_model"
+            )
+            active_model = selected_gemini_key
+            if gemini_key_input:
+                os.environ["GEMINI_API_KEY"] = gemini_key_input
+
+        st.markdown("<div class='pf-sidebar-tag' style='margin-top:12px;'>State Reset</div>", unsafe_allow_html=True)
+        if st.button("Start Fresh", key="sb_btn_reset", use_container_width=True):
+            st.session_state._pending_scratch = True
+            st.rerun()
 
 # Default provider values when demo mode is collapsed
 if "provider" not in locals():
@@ -387,7 +393,7 @@ with tab_progress:
 # TAB 4: MENTOR & EXPORTS
 # ------------------------------------------
 with tab_mentor:
-    col_chat, col_side = st.columns([1.3, 1], vertical_alignment="top")
+    col_chat, col_side = st.columns([2.4, 1.0], vertical_alignment="top")
 
     with col_chat:
         p_name = "Groq" if "Groq" in provider else ("Google Gemini" if "Gemini" in provider else "Offline")
@@ -403,31 +409,40 @@ with tab_mentor:
         )
 
     with col_side:
-        st.markdown("<div style='font-size:11px; font-weight:650; text-transform:uppercase; letter-spacing:0.08em; color:#858585; margin-bottom:10px;'>Export Curriculum</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class="pf-card" style="margin-bottom:12px;">
+            <div class="pf-section-title" style="margin-bottom:6px;">Export Curriculum</div>
+            <div style="font-size:12px; color:#5F5F5F; margin-bottom:12px; line-height:1.45;">
+                Download your personalized learning roadmap in machine-readable JSON, Markdown notes, or printable HTML report.
+            </div>
+        """, unsafe_allow_html=True)
         stats = calculate_progress_stats(roadmap, st.session_state.completed_nodes)
 
-        exp_c1, exp_c2, exp_c3 = st.columns(3, vertical_alignment="center")
-        with exp_c1:
-            st.download_button(
-                "JSON",
-                data=json.dumps(roadmap, indent=2),
-                file_name="learning_path_roadmap.json",
-                mime="application/json",
-                use_container_width=True
-            )
-        with exp_c2:
-            st.download_button(
-                "Markdown",
-                data=build_markdown_export(roadmap, st.session_state.completed_nodes, stats["progress_pct"]),
-                file_name="learning_path.md",
-                mime="text/markdown",
-                use_container_width=True
-            )
-        with exp_c3:
-            st.download_button(
-                "HTML Report",
-                data=build_printable_html_export(roadmap, st.session_state.completed_nodes, stats["progress_pct"]),
-                file_name="learning_path_report.html",
-                mime="text/html",
-                use_container_width=True
-            )
+        st.download_button(
+            "Download JSON Roadmap",
+            data=json.dumps(roadmap, indent=2),
+            file_name="learning_path_roadmap.json",
+            mime="application/json",
+            use_container_width=True,
+            key="dl_json_btn"
+        )
+        st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+        st.download_button(
+            "Download Markdown Notes",
+            data=build_markdown_export(roadmap, st.session_state.completed_nodes, stats["progress_pct"]),
+            file_name="learning_path.md",
+            mime="text/markdown",
+            use_container_width=True,
+            key="dl_md_btn"
+        )
+        st.markdown("<div style='height:4px;'></div>", unsafe_allow_html=True)
+        st.download_button(
+            "Download HTML Report",
+            data=build_printable_html_export(roadmap, st.session_state.completed_nodes, stats["progress_pct"]),
+            file_name="learning_path_report.html",
+            mime="text/html",
+            use_container_width=True,
+            key="dl_html_btn"
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+

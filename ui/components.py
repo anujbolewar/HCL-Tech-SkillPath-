@@ -263,10 +263,11 @@ def render_diagnostic_assessment_widget(roadmap: Dict[str, Any], profile: Dict[s
             "Diagnostic Question",
             options=options,
             index=0,
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="diag_mcq_radio"
         )
 
-        if st.button("Submit Assessment", type="primary", use_container_width=True):
+        if st.button("Submit Assessment", type="primary", use_container_width=True, key="diag_submit_btn"):
             is_correct = selected_option.startswith("B.")
             simulated_score = 90 if is_correct else 42
             

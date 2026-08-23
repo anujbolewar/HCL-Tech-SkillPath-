@@ -13,9 +13,9 @@ from engine.llm_router import generate_offline_streaming_mentor_reply
 
 SUGGESTED_PROMPTS = [
     "What should I study today?",
-    "Why did my roadmap change?",
+    "Why did path change?",
     "Explain my skill gaps",
-    "Adjust my plan for 1 hour"
+    "Adjust plan for 1 hour"
 ]
 
 def build_mentor_system_prompt(
@@ -111,7 +111,7 @@ def render_ai_mentor_chat(
 
     st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
 
-    # Action prompt links (Suggested chips)
+    # Action prompt links (Suggested chips with equal height & single-line alignment)
     chip_cols = st.columns(len(SUGGESTED_PROMPTS))
     prompt_to_send = None
     for idx, prompt_text in enumerate(SUGGESTED_PROMPTS):
@@ -126,7 +126,8 @@ def render_ai_mentor_chat(
             typed_prompt = st.text_input(
                 "Ask PathFinder Mentor",
                 placeholder="Ask about prerequisites, study plans, or skill gaps...",
-                label_visibility="collapsed"
+                label_visibility="collapsed",
+                key="mentor_user_text_input"
             )
         with f_col2:
             send_clicked = st.form_submit_button("Send →", type="primary", use_container_width=True)

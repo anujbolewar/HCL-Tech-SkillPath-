@@ -777,10 +777,14 @@ CUSTOM_CSS = """
     /* =========================================================
        FORM CONTROLS & BASEWEB DROPDOWNS
        ========================================================= */
+    [data-testid="stTextInputRootElement"],
+    [data-testid="stTextInputField"],
+    .stTextInput > div > div,
     .stTextInput > div > div > input,
     .stSelectbox > div > div,
     .stMultiSelect > div > div,
     [data-baseweb="input"],
+    [data-baseweb="base-input"],
     [data-baseweb="select"] {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
@@ -789,16 +793,70 @@ CUSTOM_CSS = """
         font-size: 13px !important;
     }
 
+    [data-testid="stTextInputRootElement"] input {
+        background-color: transparent !important;
+        color: var(--pf-ink) !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stTextInputRootElement"] div,
+    div[class*="eqy66r55"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+
+    .stSelectbox > div > div *,
+    [data-baseweb="select"] * {
+        color: var(--pf-ink) !important;
+    }
+
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div:focus,
+    [data-testid="stTextInputRootElement"]:focus-within,
     [data-baseweb="input"]:focus-within,
     [data-baseweb="select"]:focus-within {
         border-color: var(--pf-blue) !important;
         box-shadow: 0 0 0 1px var(--pf-blue) !important;
     }
 
-    .stTextInput > div > div > input {
+    .stTextInput > div > div > input,
+    [data-testid="stTextInputField"] {
         height: 38px !important;
+    }
+
+    /* Password visibility toggle & input action buttons */
+    [data-testid="stTextInput"] button,
+    [data-testid="stTextInput"] button:hover,
+    [data-testid="stTextInput"] button:focus,
+    [data-testid="stTextInput"] button:active,
+    button[aria-label*="password" i],
+    button[aria-label*="Password" i],
+    button[aria-label*="show password" i],
+    button[aria-label*="hide password" i],
+    button[data-testid="stBaseButton-tertiary"],
+    button[data-testid="stBaseButton-icon"] {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: #5F5F5F !important;
+        outline: none !important;
+    }
+
+    [data-testid="stTextInput"] button *,
+    button[aria-label*="password" i] *,
+    button[aria-label*="Password" i] * {
+        color: #5F5F5F !important;
+        fill: #5F5F5F !important;
+    }
+
+    [data-testid="stTextInput"] button:hover *,
+    [data-testid="stTextInput"] button:focus *,
+    button[aria-label*="password" i]:hover *,
+    button[aria-label*="Password" i]:hover * {
+        color: var(--pf-blue) !important;
+        fill: var(--pf-blue) !important;
     }
 
     /* BaseWeb Dropdown Menus & Popovers */
@@ -843,18 +901,22 @@ CUSTOM_CSS = """
         color: var(--pf-ink) !important;
     }
 
-    /* Expanders */
+    /* Expanders - Anti-Flicker Protection */
     [data-testid="stExpander"] {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
         border-radius: 6px !important;
         box-shadow: none !important;
         margin-bottom: 10px !important;
+        transition: none !important;
+        animation: none !important;
     }
 
     [data-testid="stExpander"] details {
         background-color: var(--pf-surface) !important;
         border-radius: 6px !important;
+        transition: none !important;
+        animation: none !important;
     }
 
     [data-testid="stExpander"] summary {
@@ -863,7 +925,9 @@ CUSTOM_CSS = """
         font-size: 13px !important;
         font-weight: 600 !important;
         border-radius: 6px !important;
-        transition: background-color 150ms ease, color 150ms ease !important;
+        transition: none !important;
+        animation: none !important;
+        cursor: pointer !important;
     }
 
     [data-testid="stExpander"] summary:hover {
@@ -876,6 +940,12 @@ CUSTOM_CSS = """
     [data-testid="stExpander"] summary div {
         color: inherit !important;
         font-weight: 600 !important;
+        transition: none !important;
+    }
+
+    [data-testid="stExpander"] [data-testid="stVerticalBlock"] {
+        transition: none !important;
+        animation: none !important;
     }
 
     /* Radio Controls */
@@ -940,8 +1010,28 @@ CUSTOM_CSS = """
     }
 
     /* =========================================================
-       CHAT & MENTOR STYLES (STABLE CONTRAST)
+       CHAT & MENTOR STYLES (STABLE CONTRAST & EQUAL-HEIGHT CHIPS)
        ========================================================= */
+    div[class*="st-key-chip_"] button,
+    div[class*="st-key-chip_"] button p,
+    div[class*="st-key-chip_"] button span {
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        font-size: 11.5px !important;
+        line-height: 34px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    div[class*="st-key-chip_"] button {
+        padding: 0 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
     [data-testid="stChatMessage"] {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
