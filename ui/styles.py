@@ -256,13 +256,16 @@ CUSTOM_CSS = """
 
     /* Refined Textual Popular Paths Row Overrides */
     div[class*="st-key-pop_btn_"] button,
+    div[class*="st-key-pop_btn_"] button:hover,
     div[class*="st-key-pop_btn_"] button:focus,
+    div[class*="st-key-pop_btn_"] button:focus-visible,
     div[class*="st-key-pop_btn_"] button:active {
         background: transparent !important;
         background-color: transparent !important;
         border: none !important;
         border-color: transparent !important;
         box-shadow: none !important;
+        outline: none !important;
         padding: 0px 2px !important;
         height: 22px !important;
         min-height: 22px !important;
@@ -280,6 +283,12 @@ CUSTOM_CSS = """
     div[class*="st-key-pop_btn_"] button:hover p,
     div[class*="st-key-pop_btn_"] button:hover span {
         color: var(--pf-blue) !important;
+        text-decoration: underline !important;
+    }
+
+    div[class*="st-key-pop_btn_"] button:active p,
+    div[class*="st-key-pop_btn_"] button:active span {
+        color: var(--pf-blue-deep) !important;
         text-decoration: underline !important;
     }
 
@@ -302,6 +311,7 @@ CUSTOM_CSS = """
         border-radius: 0px !important;
         padding: 6px 4px 10px 4px !important;
         box-shadow: none !important;
+        outline: none !important;
         opacity: 1 !important;
     }
 
@@ -339,6 +349,16 @@ CUSTOM_CSS = """
     div[data-testid="stTabs"] button[role="tab"][aria-selected="true"],
     button[role="tab"][aria-selected="true"] {
         border-bottom: 2px solid var(--pf-blue) !important;
+        background-color: transparent !important;
+    }
+
+    div[data-testid="stTabs"] button[role="tab"]:focus,
+    div[data-testid="stTabs"] button[role="tab"]:active,
+    button[role="tab"]:focus,
+    button[role="tab"]:active {
+        background-color: transparent !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
 
     /* =========================================================
@@ -633,10 +653,12 @@ CUSTOM_CSS = """
     }
 
     /* =========================================================
-       BUTTONS & INK CONTROLS (WITH ARROW MICRO-INTERACTION)
+       BUTTONS & INK CONTROLS (COMPREHENSIVE STATE MATRIX)
        ========================================================= */
     /* Primary: Black/Ink Button (#111111 -> Hover Deep Cobalt #2457D6) */
-    .stButton > button[kind="primary"] {
+    .stButton > button[kind="primary"],
+    button[data-testid="stBaseButton-primary"],
+    button[data-testid="stBaseButton-primary"]:visited {
         background-color: var(--pf-ink) !important;
         border: 1px solid var(--pf-ink) !important;
         color: #FFFFFF !important;
@@ -644,18 +666,47 @@ CUSTOM_CSS = """
         font-size: 12.5px !important;
         font-weight: 600 !important;
         height: 38px !important;
+        box-shadow: none !important;
         transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease !important;
     }
 
-    .stButton > button[kind="primary"]:hover {
+    .stButton > button[kind="primary"]:hover,
+    button[data-testid="stBaseButton-primary"]:hover {
         background-color: var(--pf-blue) !important;
         border-color: var(--pf-blue) !important;
         color: #FFFFFF !important;
     }
 
-    /* Secondary: Clean Surface Button */
+    .stButton > button[kind="primary"]:focus,
+    .stButton > button[kind="primary"]:focus-visible,
+    button[data-testid="stBaseButton-primary"]:focus,
+    button[data-testid="stBaseButton-primary"]:focus-visible {
+        background-color: var(--pf-ink) !important;
+        border-color: var(--pf-blue) !important;
+        color: #FFFFFF !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(36, 87, 214, 0.25) !important;
+    }
+
+    .stButton > button[kind="primary"]:active,
+    button[data-testid="stBaseButton-primary"]:active {
+        background-color: var(--pf-blue-deep) !important;
+        border-color: var(--pf-blue-deep) !important;
+        color: #FFFFFF !important;
+    }
+
+    .stButton > button[kind="primary"] p,
+    .stButton > button[kind="primary"] span,
+    button[data-testid="stBaseButton-primary"] p,
+    button[data-testid="stBaseButton-primary"] span {
+        color: #FFFFFF !important;
+    }
+
+    /* Secondary: Clean Surface Button (#FFFFFF -> Hover #F1F0EB) */
     .stButton > button,
-    .stDownloadButton > button {
+    .stDownloadButton > button,
+    button[data-testid="stBaseButton-secondary"],
+    button[data-testid="stBaseButton-secondary"]:visited {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
         color: var(--pf-ink) !important;
@@ -663,19 +714,53 @@ CUSTOM_CSS = """
         font-size: 12.5px !important;
         font-weight: 500 !important;
         height: 36px !important;
-        transition: background-color 150ms ease, border-color 150ms ease !important;
+        box-shadow: none !important;
+        transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease !important;
     }
 
     .stButton > button:hover,
-    .stDownloadButton > button:hover {
+    .stDownloadButton > button:hover,
+    button[data-testid="stBaseButton-secondary"]:hover {
         background-color: var(--pf-canvas-subtle) !important;
         border-color: #C5C5BF !important;
         color: var(--pf-ink) !important;
     }
 
+    .stButton > button:focus,
+    .stButton > button:focus-visible,
+    .stDownloadButton > button:focus,
+    .stDownloadButton > button:focus-visible,
+    button[data-testid="stBaseButton-secondary"]:focus,
+    button[data-testid="stBaseButton-secondary"]:focus-visible {
+        background-color: var(--pf-surface) !important;
+        border: 1.5px solid var(--pf-blue) !important;
+        color: var(--pf-ink) !important;
+        outline: none !important;
+        box-shadow: 0 0 0 2px rgba(36, 87, 214, 0.15) !important;
+    }
+
+    .stButton > button:active,
+    .stDownloadButton > button:active,
+    button[data-testid="stBaseButton-secondary"]:active {
+        background-color: var(--pf-canvas-subtle) !important;
+        border-color: var(--pf-border) !important;
+        color: var(--pf-ink) !important;
+    }
+
+    .stButton > button p,
+    .stButton > button span,
+    .stDownloadButton > button p,
+    .stDownloadButton > button span,
+    button[data-testid="stBaseButton-secondary"] p,
+    button[data-testid="stBaseButton-secondary"] span {
+        color: var(--pf-ink) !important;
+    }
+
     /* Disabled state for locked milestones */
     .stButton > button:disabled,
-    .stButton > button[disabled] {
+    .stButton > button[disabled],
+    button[data-testid="stBaseButton-secondary"]:disabled,
+    button[data-testid="stBaseButton-primary"]:disabled {
         background-color: var(--pf-canvas-subtle) !important;
         border-color: var(--pf-border) !important;
         color: var(--pf-ink-faint) !important;
@@ -684,22 +769,131 @@ CUSTOM_CSS = """
         box-shadow: none !important;
     }
 
-    /* Form Controls */
+    .stButton > button:disabled p,
+    .stButton > button:disabled span {
+        color: var(--pf-ink-faint) !important;
+    }
+
+    /* =========================================================
+       FORM CONTROLS & BASEWEB DROPDOWNS
+       ========================================================= */
     .stTextInput > div > div > input,
     .stSelectbox > div > div,
-    .stMultiSelect > div > div {
+    .stMultiSelect > div > div,
+    [data-baseweb="input"],
+    [data-baseweb="select"] {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
         border-radius: 5px !important;
         color: var(--pf-ink) !important;
         font-size: 13px !important;
-        height: 38px !important;
     }
 
     .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div:focus {
+    .stSelectbox > div > div:focus,
+    [data-baseweb="input"]:focus-within,
+    [data-baseweb="select"]:focus-within {
         border-color: var(--pf-blue) !important;
         box-shadow: 0 0 0 1px var(--pf-blue) !important;
+    }
+
+    .stTextInput > div > div > input {
+        height: 38px !important;
+    }
+
+    /* BaseWeb Dropdown Menus & Popovers */
+    [data-baseweb="popover"],
+    [data-baseweb="menu"],
+    ul[role="listbox"] {
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
+        border-radius: 6px !important;
+        box-shadow: 0 4px 16px rgba(20, 20, 20, 0.08) !important;
+    }
+
+    li[role="option"],
+    [data-baseweb="menu"] li {
+        background-color: var(--pf-surface) !important;
+        color: var(--pf-ink) !important;
+        font-size: 12.5px !important;
+    }
+
+    li[role="option"]:hover,
+    li[role="option"][aria-selected="true"],
+    [data-baseweb="menu"] li:hover {
+        background-color: var(--pf-canvas-subtle) !important;
+        color: var(--pf-blue) !important;
+    }
+
+    li[role="option"] p,
+    li[role="option"] span,
+    li[role="option"] div,
+    [data-baseweb="menu"] li * {
+        color: inherit !important;
+    }
+
+    /* MultiSelect Tags / Badges */
+    [data-baseweb="tag"] {
+        background-color: var(--pf-canvas-subtle) !important;
+        border: 1px solid var(--pf-border) !important;
+        color: var(--pf-ink) !important;
+    }
+
+    [data-baseweb="tag"] span {
+        color: var(--pf-ink) !important;
+    }
+
+    /* Expanders */
+    [data-testid="stExpander"] {
+        background-color: var(--pf-surface) !important;
+        border: 1px solid var(--pf-border) !important;
+        border-radius: 6px !important;
+        box-shadow: none !important;
+        margin-bottom: 10px !important;
+    }
+
+    [data-testid="stExpander"] details {
+        background-color: var(--pf-surface) !important;
+        border-radius: 6px !important;
+    }
+
+    [data-testid="stExpander"] summary {
+        background-color: var(--pf-surface) !important;
+        color: var(--pf-ink) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+        transition: background-color 150ms ease, color 150ms ease !important;
+    }
+
+    [data-testid="stExpander"] summary:hover {
+        background-color: var(--pf-canvas-subtle) !important;
+        color: var(--pf-blue) !important;
+    }
+
+    [data-testid="stExpander"] summary p,
+    [data-testid="stExpander"] summary span,
+    [data-testid="stExpander"] summary div {
+        color: inherit !important;
+        font-weight: 600 !important;
+    }
+
+    /* Radio Controls */
+    [data-testid="stRadio"] label,
+    [data-testid="stRadio"] span,
+    [data-testid="stRadio"] p,
+    [data-testid="stRadio"] div {
+        color: var(--pf-ink) !important;
+        font-size: 12.5px !important;
+    }
+
+    /* Sliders */
+    [data-testid="stSlider"] label,
+    [data-testid="stSlider"] span,
+    [data-testid="stSlider"] div,
+    [data-testid="stSlider"] p {
+        color: var(--pf-ink) !important;
+        font-size: 12px !important;
     }
 
     /* =========================================================
@@ -746,7 +940,7 @@ CUSTOM_CSS = """
     }
 
     /* =========================================================
-       CHAT & MENTOR STYLES
+       CHAT & MENTOR STYLES (STABLE CONTRAST)
        ========================================================= */
     [data-testid="stChatMessage"] {
         background-color: var(--pf-surface) !important;
@@ -759,6 +953,24 @@ CUSTOM_CSS = """
         line-height: 1.5 !important;
     }
 
+    [data-testid="stChatMessage"] p,
+    [data-testid="stChatMessage"] span,
+    [data-testid="stChatMessage"] div,
+    [data-testid="stChatMessage"] strong,
+    [data-testid="stChatMessage"] li {
+        color: var(--pf-ink) !important;
+    }
+
+    [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarUser"] {
+        background-color: var(--pf-ink) !important;
+        color: #FFFFFF !important;
+    }
+
+    [data-testid="stChatMessage"] [data-testid="stChatMessageAvatarAssistant"] {
+        background-color: var(--pf-blue) !important;
+        color: #FFFFFF !important;
+    }
+
     [data-testid="stChatInput"] {
         background-color: var(--pf-surface) !important;
         border: 1px solid var(--pf-border) !important;
@@ -766,8 +978,22 @@ CUSTOM_CSS = """
     }
 
     [data-testid="stChatInput"] textarea {
+        background-color: var(--pf-surface) !important;
         color: var(--pf-ink) !important;
         font-size: 13px !important;
+    }
+
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: var(--pf-ink-faint) !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stChatInput"] button {
+        color: var(--pf-ink) !important;
+    }
+
+    [data-testid="stChatInput"] button:hover {
+        color: var(--pf-blue) !important;
     }
 
     /* =========================================================

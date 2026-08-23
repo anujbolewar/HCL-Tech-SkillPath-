@@ -10,6 +10,7 @@ from typing import Dict, Any, Set, List
 import streamlit as st
 
 from core.config import DEFAULT_PROFILE, WELCOME_MESSAGE
+from engine.fallback_data import generate_fallback_roadmap
 
 STATE_FILE = Path(".skillpath_state.json")
 
@@ -81,17 +82,28 @@ def initialize_session_state() -> None:
         # Try loading previous session state if available
         load_persisted_state()
 
+        if not st.session_state.roadmap_data:
+            st.session_state.roadmap_data = generate_fallback_roadmap(
+                "I want to become an AI & Machine Learning Engineer",
+                DEFAULT_PROFILE
+            )
+            persist_state()
+
     # Handle scratch wipe request
     if st.session_state.get("_pending_scratch"):
         clear_persisted_state()
         st.session_state.clear()
         st.session_state.initialized = True
         st.session_state.user_profile = DEFAULT_PROFILE.copy()
-        st.session_state.roadmap_data = None
+        st.session_state.roadmap_data = generate_fallback_roadmap(
+            "I want to become an AI & Machine Learning Engineer",
+            DEFAULT_PROFILE
+        )
         st.session_state.completed_nodes = set()
         st.session_state.selected_node_id = None
         st.session_state.adaptation_event = None
         st.session_state._show_replan_banner = False
+        st.session_state._last_completed_title = ""
         st.session_state.chat_history = [{
             "role": "assistant",
             "content": WELCOME_MESSAGE
