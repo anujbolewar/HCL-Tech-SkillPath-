@@ -14,9 +14,10 @@ Palette:
 """
 
 CUSTOM_CSS = """
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
     :root {
         --pf-canvas: #F7F6F2;
         --pf-canvas-subtle: #F1F0EB;
@@ -34,9 +35,25 @@ CUSTOM_CSS = """
         --pf-green-bg: #F2F7F4;
         --pf-amber: #C58A35;
         --pf-amber-bg: #FDF9F2;
-        --pf-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        --pf-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         --pf-font-serif: 'DM Serif Display', Georgia, serif;
         --pf-font-mono: 'JetBrains Mono', monospace;
+    }
+
+    /* Global Anti-Flicker Hardware Acceleration */
+    *, *::before, *::after {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    [data-testid="stExpander"],
+    [data-testid="stExpander"] details,
+    [data-testid="stExpander"] summary,
+    section[data-testid="stSidebar"],
+    .main .block-container {
+        -webkit-backface-visibility: hidden !important;
+        backface-visibility: hidden !important;
+        transform: translateZ(0);
     }
 
     /* Global Warm Ivory Canvas */

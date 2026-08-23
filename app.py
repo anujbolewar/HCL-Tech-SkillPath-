@@ -141,11 +141,15 @@ with st.sidebar:
             key="sb_skills_multi"
         )
 
-        st.session_state.user_profile.update({
-            "experience_level": exp_input,
-            "weekly_hours": hours_input,
-            "skills": known_skills_input
-        })
+        if (st.session_state.user_profile.get("experience_level") != exp_input or
+            st.session_state.user_profile.get("weekly_hours") != hours_input or
+            st.session_state.user_profile.get("skills") != known_skills_input):
+            st.session_state.user_profile.update({
+                "experience_level": exp_input,
+                "weekly_hours": hours_input,
+                "skills": known_skills_input
+            })
+            persist_state()
 
     # 2. Developer & Demo Presets Expander (Separated, No Nesting)
     with st.expander("Developer & Demo Mode", expanded=False):
